@@ -56,16 +56,14 @@ async function nativeVoice(){
     if(p && p.speechRecognition !== 'granted'){
       p = await SR.requestPermissions();   // 没授权先申请一次
     }
-    alert('available=' + JSON.stringify(a) + '\nperm=' + JSON.stringify(p));
-
     const ok = a && (a.available === true || a === true);
     if(!ok){ imeVoice(); return; }                       // 第 1 层：无识别引擎
     if(p && p.speechRecognition !== 'granted'){ imeVoice(); return; } // 第 2 层：权限被挡
 
-    // 第 3 层：引擎在、权限有 → 真正开始识别
+    // 第 3 层：用系统前台识别弹框（popup:true），避开 MIUI 对后台识别服务的拦截
     setRec(true);
     const res = await SR.start({
-      language: 'zh-CN', maxResults: 1, partialResults: false, popup: false
+      language: 'zh-CN', maxResults: 1, partialResults: false, popup: true
     });
     const text = res && res.matches && res.matches[0];
     gotVoice(text);
