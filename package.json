@@ -1,0 +1,20 @@
+{
+  "name": "coinjot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI 记账 · 一句话/语音记账 · 多币种汇率 · 可视化统计",
+  "scripts": {
+    "copyweb": "node build-www.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/app": "^6.0.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/status-bar": "^6.0.2",
+    "@capacitor-community/speech-recognition": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/assets": "^3.0.5"
+  }
+}

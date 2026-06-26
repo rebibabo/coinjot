@@ -1,0 +1,8 @@
+{
+  "appId": "com.rebibabo.coinjot",
+  "appName": "记账",
+  "webDir": "www",
+  "plugins": {
+    "CapacitorHttp": { "enabled": true }
+  }
+}

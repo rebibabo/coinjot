@@ -1,0 +1,17 @@
+# 密钥与本地环境
+.env
+.claude/
+
+# 依赖与构建产物（CI 会重新生成）
+node_modules/
+www/
+android/
+ios/
+
+# 本地数据 / 备份 / 临时
+data/
+*.csv
+导入_*.json
+记账*备份_*.json
+*.log
+.DS_Store
