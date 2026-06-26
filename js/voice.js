@@ -1,61 +1,50 @@
-/* =================== 语音输入 ===================
-   双通道自动适配：
-   · App 端（Capacitor）→ 调用系统原生语音识别（@capacitor-community/speech-recognition）
-   · 浏览器端          → 退回 Web Speech API
-   识别出文字后填入 aiInput 并自动触发 AI 解析（依赖 ai.js 的 aiInput / runAI）。 */
+/* =================== 语音输入（系统语音识别）===================
+   · App 端：调用系统 SpeechRecognizer（@capacitor-community/speech-recognition），
+     先申请麦克风权限，授权后弹出系统识别。
+   · 浏览器端：Web Speech API。
+   识别出文字后填入 aiInput 并自动触发解析（依赖 ai.js 的 aiInput / runAI）。 */
 const micBtn = document.getElementById('micBtn');
 let recOn = false;
 
 micBtn.onclick = ()=>{ if(recOn) return; startVoice(); };
-
 function setRec(on){ recOn = on; micBtn.classList.toggle('rec', on); micBtn.textContent = on ? '●' : '🎤'; }
-
-function gotVoice(text){
-  setRec(false);
-  if(!text || !text.trim()) return;
-  aiInput.value = text.trim();
-  runAI();              // 说完直接解析成一笔账
-}
+function gotVoice(text){ setRec(false); if(!text || !text.trim()) return; aiInput.value = text.trim(); runAI(); }
 
 async function startVoice(){
   const cap = window.Capacitor;
-  // ---- App 端：系统原生识别 ----
-  if(cap && cap.Plugins && cap.Plugins.SpeechRecognition){
-    const SR = cap.Plugins.SpeechRecognition;
+  const SR = cap && cap.Plugins && cap.Plugins.SpeechRecognition;
+
+  if(SR){   // ---- App：系统语音识别 ----
     try{
-      const { available } = await SR.available();
-      if(!available){ alert('当前设备不支持语音识别'); return; }
+      const a = await SR.available();
+      if(a && a.available === false){ alert('当前设备不支持系统语音识别'); return; }
       let perm = {};
       try{ perm = await SR.checkPermissions(); }catch(_){}
       if(perm.speechRecognition !== 'granted'){
         try{ perm = await SR.requestPermissions(); }catch(_){}
       }
       if(perm.speechRecognition !== 'granted'){
-        alert('未获得麦克风权限。请到「系统设置 → 应用 → 记账 → 权限」开启麦克风后重试');
+        alert('未获得麦克风权限。请到「设置 → 应用 → 记账 → 权限 → 麦克风」开启后重试');
         return;
       }
       setRec(true);
-      const res = await SR.start({
-        language:'zh-CN', maxResults:1, partialResults:false, popup:false
-      });
+      const res = await SR.start({ language:'zh-CN', maxResults:1, partialResults:false, popup:false });
       gotVoice(res && res.matches && res.matches[0]);
     }catch(err){
       setRec(false);
       const m = String((err && (err.message || err.code || err)) || '');
-      const map = {'1':'网络超时','2':'语音服务不可用或网络受限','3':'录音失败','4':'服务出错',
-        '5':'客户端错误','6':'没听到声音','7':'没听清，请再说一次','8':'识别忙，请稍候','9':'缺少麦克风权限'};
-      const friendly = map[m] || (/no match|didn't understand/i.test(m) ? '没听清，请再说一次' : ('语音识别出错：'+m));
-      alert(friendly + (['2','4','5'].includes(m) ? '\n可改用文字或键盘输入' : ''));
+      const map = {'1':'网络超时','2':'网络受限/语音服务不可用','3':'录音失败','4':'服务出错',
+        '5':'客户端错误','6':'没听到声音，请对着麦克风说','7':'没听清，请再说一次','8':'识别忙，请稍候','9':'缺少麦克风权限'};
+      alert(map[m] || (/no match|didn't understand/i.test(m) ? '没听清，请再说一次' : ('语音识别出错：'+m)));
     }
     return;
   }
-  // ---- 浏览器端：Web Speech API ----
+
+  // ---- 浏览器：Web Speech API ----
   const WSR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!WSR){ alert('当前浏览器不支持语音识别，请在 App 内或 Chrome 中使用'); return; }
+  if(!WSR){ alert('当前环境不支持语音识别，请在 App 内或 Chrome 使用'); return; }
   const rec = new WSR();
-  rec.lang = 'zh-CN';
-  rec.interimResults = false;
-  rec.maxAlternatives = 1;
+  rec.lang = 'zh-CN'; rec.interimResults = false; rec.maxAlternatives = 1;
   rec.onresult = e => gotVoice(e.results[0][0].transcript);
   rec.onerror = e => {
     setRec(false);
@@ -65,6 +54,5 @@ async function startVoice(){
       alert('语音识别出错：' + e.error);
   };
   rec.onend = () => setRec(false);
-  setRec(true);
-  rec.start();
+  setRec(true); rec.start();
 }
