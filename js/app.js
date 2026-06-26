@@ -70,19 +70,6 @@ function setStatusBar(name){
 }
 setStatusBar('list');
 
-/* 键盘弹出时（resize:none，界面不被压缩），把当前输入框上移到键盘之上；收起复位 */
-if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Keyboard){
-  const KB = window.Capacitor.Plugins.Keyboard;
-  KB.addListener('keyboardWillShow', info=>{
-    const ae = document.activeElement;
-    if(!ae || !/INPUT|TEXTAREA/.test(ae.tagName)) return;
-    const kb = info.keyboardHeight || 0;
-    const overlap = ae.getBoundingClientRect().bottom - (window.innerHeight - kb) + 40;
-    if(overlap > 0) document.getElementById('stage').style.top = (-overlap) + 'px';
-  });
-  KB.addListener('keyboardWillHide', ()=> fitStage());   // 复位
-}
-
 /* 轻提示 toast：可带一个操作按钮（如「撤销」） */
 let toastTimer = null;
 function showToast(msg, actLabel, actFn, ms=4000){

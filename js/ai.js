@@ -185,8 +185,7 @@ async function runAI(){
   aiBtn.innerHTML = '<span class="spin"></span>';
   try{
     const arr = await callLLM(text);
-    if(arr.length <= 1) applyAIResult(arr[0] || {});   // 单笔→填表复核
-    else saveMultiple(arr);                            // 多笔→直接记录
+    saveMultiple(arr);                                 // 单笔/多笔都直接入账，不再填表复核
   }catch(err){
     alert('识别失败：' + (err.message || err));
   }finally{
