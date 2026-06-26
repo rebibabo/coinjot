@@ -3,6 +3,7 @@
   "appName": "记账",
   "webDir": "www",
   "plugins": {
-    "CapacitorHttp": { "enabled": true }
+    "CapacitorHttp": { "enabled": true },
+    "Keyboard": { "resize": "none" }
   }
 }
