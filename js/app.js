@@ -33,6 +33,7 @@ function goTab(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
   topbar.style.display = name==='settings' ? 'none' : '';
+  setStatusBar(name);
 }
 document.querySelectorAll('.tab[data-tab]').forEach(t=> t.onclick=()=>goTab(t.dataset.tab));
 
@@ -58,13 +59,15 @@ if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App)
 /* 桌面/浏览器预览：Esc 等效返回键，方便测试 */
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') handleBack(); });
 
-/* App 内：状态栏不覆盖网页、用深色底配白图标，避开刘海/状态栏（需 @capacitor/status-bar） */
-if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar){
-  const SB = window.Capacitor.Plugins.StatusBar;
+/* App 内：状态栏不覆盖网页，颜色随页面变（避开刘海） */
+function setStatusBar(name){
+  const SB = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
+  if(!SB) return;
   SB.setOverlaysWebView({ overlay:false }).catch(()=>{});
-  SB.setBackgroundColor({ color:'#0e0f12' }).catch(()=>{});
-  SB.setStyle({ style:'LIGHT' }).catch(()=>{});   // 深色背景 → 白色状态栏图标
+  if(name==='settings'){ SB.setBackgroundColor({color:'#f4f5f7'}).catch(()=>{}); SB.setStyle({style:'DARK'}).catch(()=>{}); }
+  else { SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{}); SB.setStyle({style:'LIGHT'}).catch(()=>{}); }
 }
+setStatusBar('list');
 
 /* 轻提示 toast：可带一个操作按钮（如「撤销」） */
 let toastTimer = null;
@@ -77,11 +80,26 @@ function showToast(msg, actLabel, actFn, ms=4000){
 }
 function hideToast(){ document.getElementById('toast').classList.remove('show'); }
 
-/* 缩放适配：把 1200x2670 画布塞进当前窗口 */
+/* 缩放适配：
+   手机竖屏 → 按宽度铺满整屏，高度按视口自适应（内部 flex 布局自动伸展）；
+   桌面/横向 → 居中等比缩放（letterbox），方便预览。 */
 function fitStage(){
-  const stage=document.getElementById('stage');
-  const s=Math.min(window.innerWidth/1200, window.innerHeight/2670);
-  stage.style.transform=`translate(-50%,-50%) scale(${s})`;
+  const stage = document.getElementById('stage');
+  const phone = document.querySelector('.phone');
+  const W = window.innerWidth, H = window.innerHeight;
+  if(W/H >= 1){                        // 偏横（桌面）→ 居中 letterbox，固定高 2670
+    phone.style.width = '1200px'; phone.style.height = '2670px';
+    const s = Math.min(W/1200, H/2670);
+    stage.style.transformOrigin = 'center center';
+    stage.style.left = '50%'; stage.style.top = '50%';
+    stage.style.transform = `translate(-50%,-50%) scale(${s})`;
+  } else {                             // 竖屏（手机）→ 按宽铺满，高度自适应
+    const s = W/1200;
+    phone.style.width = '1200px'; phone.style.height = (H/s) + 'px';
+    stage.style.transformOrigin = 'top left';
+    stage.style.left = '0'; stage.style.top = '0';
+    stage.style.transform = `scale(${s})`;
+  }
 }
 window.addEventListener('resize', fitStage);
 

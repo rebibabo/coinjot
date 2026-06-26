@@ -28,13 +28,16 @@ async function startVoice(){
       const perm = await SR.requestPermissions();
       if(perm && perm.speechRecognition === 'denied'){ alert('请在系统设置里允许麦克风/语音权限'); return; }
       setRec(true);
-      const { matches } = await SR.start({
-        language:'zh-CN', maxResults:1, partialResults:false, popup:false
+      const res = await SR.start({
+        language:'zh-CN', maxResults:1, partialResults:false,
+        popup:true, prompt:'请说出账目，如：今天打车35'
       });
-      gotVoice(matches && matches[0]);
+      gotVoice(res && res.matches && res.matches[0]);
     }catch(err){
       setRec(false);
-      alert('语音识别失败：' + (err.message || err));
+      const m = err && (err.message || err);
+      if(/no match|didn't understand|没.*识别/i.test(String(m))) alert('没听清，请再说一次');
+      else alert('语音识别失败：' + m);
     }
     return;
   }
