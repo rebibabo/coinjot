@@ -34,12 +34,8 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
-      - name: Patch AndroidManifest (竖屏锁定 + 录音权限)
-        run: |
-          M=android/app/src/main/AndroidManifest.xml
-          sed -i '/android:name=".MainActivity"/a\            android:screenOrientation="portrait"' "$M"
-          grep -q 'RECORD_AUDIO' "$M" || sed -i 's#<application#<uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <application#' "$M"
-          echo "===== uses-permission 检查 ====="; grep -i 'uses-permission' "$M" || true
+      - name: Lock portrait orientation
+        run: sed -i '/android:name=".MainActivity"/a\            android:screenOrientation="portrait"' android/app/src/main/AndroidManifest.xml
 
       - name: Generate app icon & splash
         continue-on-error: true
