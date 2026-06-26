@@ -42,8 +42,11 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y librsvg2-bin
           mkdir -p assets
-          rsvg-convert resources/icon.svg   -w 1024 -h 1024 -o assets/logo.png
-          rsvg-convert resources/splash.svg -w 2732 -h 2732 -o assets/splash.png
+          # 自适应图标分层：背景铺满 + 前景透明缩进安全区，避免启动器遮罩露出边框
+          rsvg-convert resources/icon-background.svg -w 1024 -h 1024 -o assets/icon-background.png
+          rsvg-convert resources/icon-foreground.svg -w 1024 -h 1024 -o assets/icon-foreground.png
+          rsvg-convert resources/icon-only.svg       -w 1024 -h 1024 -o assets/icon-only.png
+          rsvg-convert resources/splash.svg          -w 2732 -h 2732 -o assets/splash.png
           npx @capacitor/assets generate --android
 
       - name: Sync Capacitor
