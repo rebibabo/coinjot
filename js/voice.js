@@ -25,8 +25,15 @@ async function startVoice(){
     try{
       const { available } = await SR.available();
       if(!available){ alert('当前设备不支持语音识别'); return; }
-      const perm = await SR.requestPermissions();
-      if(perm && perm.speechRecognition === 'denied'){ alert('请在系统设置里允许麦克风/语音权限'); return; }
+      let perm = {};
+      try{ perm = await SR.checkPermissions(); }catch(_){}
+      if(perm.speechRecognition !== 'granted'){
+        try{ perm = await SR.requestPermissions(); }catch(_){}
+      }
+      if(perm.speechRecognition !== 'granted'){
+        alert('未获得麦克风权限。请到「系统设置 → 应用 → 记账 → 权限」开启麦克风后重试');
+        return;
+      }
       setRec(true);
       const res = await SR.start({
         language:'zh-CN', maxResults:1, partialResults:false, popup:false

@@ -19,6 +19,7 @@ document.getElementById('curBtn').onclick=()=>{
   entryCur = currencies[(idx+1) % currencies.length].code;
   localStorage.setItem(LS_LASTCUR, entryCur);   // 记住选择
   updateCurBtn();
+  updateAmt();   // 切币种立即刷新折算（相等时自动清空）
 };
 
 /* 连续记账：开后存完一笔不关弹层，接着记下一笔 */
