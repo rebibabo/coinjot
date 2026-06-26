@@ -49,6 +49,31 @@ jobs:
           rsvg-convert resources/splash.svg          -w 2732 -h 2732 -o assets/splash.png
           npx @capacitor/assets generate --android
 
+      - name: Generate adaptive launcher icons (deterministic, 覆盖图标避免黑边)
+        run: |
+          sudo apt-get install -y librsvg2-bin
+          RES=android/app/src/main/res
+          # 自适应图标画布 108dp / legacy 图标 48dp，各密度像素：
+          declare -A ADP=( [mdpi]=108 [hdpi]=162 [xhdpi]=216 [xxhdpi]=324 [xxxhdpi]=432 )
+          declare -A LEG=( [mdpi]=48  [hdpi]=72  [xhdpi]=96  [xxhdpi]=144 [xxxhdpi]=192 )
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            dir=$RES/mipmap-$d; mkdir -p "$dir"
+            rsvg-convert resources/icon-background.svg -w ${ADP[$d]} -h ${ADP[$d]} -o "$dir/ic_launcher_background.png"
+            rsvg-convert resources/icon-foreground.svg -w ${ADP[$d]} -h ${ADP[$d]} -o "$dir/ic_launcher_foreground.png"
+            rsvg-convert resources/icon-only.svg       -w ${LEG[$d]} -h ${LEG[$d]} -o "$dir/ic_launcher.png"
+            cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
+          done
+          mkdir -p "$RES/mipmap-anydpi-v26"
+          cat > "$RES/mipmap-anydpi-v26/ic_launcher.xml" <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@mipmap/ic_launcher_background"/>
+              <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+          </adaptive-icon>
+          XML
+          cp "$RES/mipmap-anydpi-v26/ic_launcher.xml" "$RES/mipmap-anydpi-v26/ic_launcher_round.xml"
+          echo "---- generated mipmaps ----"; ls -R "$RES" | grep -A6 "mipmap-xxhdpi:"
+
       - name: Sync Capacitor
         run: npx cap sync android
 
