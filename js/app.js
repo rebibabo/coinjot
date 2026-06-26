@@ -84,25 +84,31 @@ function hideToast(){ document.getElementById('toast').classList.remove('show');
 /* 缩放适配：
    手机竖屏 → 按宽度铺满整屏，高度按视口自适应（内部 flex 布局自动伸展）；
    桌面/横向 → 居中等比缩放（letterbox），方便预览。 */
+let baseH = 0;   // 没有键盘时的完整视口高度（键盘弹出会把 innerHeight 压小）
 function fitStage(){
   const stage = document.getElementById('stage');
   const phone = document.querySelector('.phone');
   const W = window.innerWidth, H = window.innerHeight;
-  if(W/H >= 1){                        // 偏横（桌面）→ 居中 letterbox，固定高 2670
+  if(H > baseH) baseH = H;
+  // 键盘弹出导致视口骤缩（>120px）时，仍按完整高度布局，界面不被顶起/压缩
+  const effH = (H < baseH - 120) ? baseH : H;
+  if(W/effH >= 1){                     // 偏横（桌面）→ 居中 letterbox，固定高 2670
     phone.style.width = '1200px'; phone.style.height = '2670px';
-    const s = Math.min(W/1200, H/2670);
+    const s = Math.min(W/1200, effH/2670);
     stage.style.transformOrigin = 'center center';
     stage.style.left = '50%'; stage.style.top = '50%';
     stage.style.transform = `translate(-50%,-50%) scale(${s})`;
   } else {                             // 竖屏（手机）→ 按宽铺满，高度自适应
     const s = W/1200;
-    phone.style.width = '1200px'; phone.style.height = (H/s) + 'px';
+    phone.style.width = '1200px'; phone.style.height = (effH/s) + 'px';
     stage.style.transformOrigin = 'top left';
     stage.style.left = '0'; stage.style.top = '0';
     stage.style.transform = `scale(${s})`;
   }
+  stage.style.visibility = 'visible';   // 缩放就位后再显示，消除开屏闪烁
 }
 window.addEventListener('resize', fitStage);
+window.addEventListener('orientationchange', ()=>{ baseH = 0; setTimeout(fitStage, 100); });
 
 /* 关闭所有输入框的拼写检查红线 / 自动填充建议（小人图标） */
 document.querySelectorAll('input:not([type=file]), textarea').forEach(el=>{

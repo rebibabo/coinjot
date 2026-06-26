@@ -24,7 +24,8 @@ body{
   display:flex; align-items:center; justify-content:center;
 }
 /* 缩放容器：保持画布原始像素，由 JS transform:scale 适配 */
-#stage{ position:fixed; top:50%; left:50%; transform-origin:center center; }
+/* 初始隐藏，等 JS 第一次 fitStage 缩放到位再显示，避免开屏闪一帧未缩放的大图 */
+#stage{ position:fixed; top:50%; left:50%; transform-origin:center center; visibility:hidden; }
 .phone{
   width:var(--w); height:var(--h);
   background:var(--bg);
