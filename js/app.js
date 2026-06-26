@@ -34,6 +34,7 @@ function goTab(name){
   document.getElementById('page-'+name).classList.add('active');
   topbar.style.display = name==='settings' ? 'none' : '';
   setStatusBar(name);
+  if(name!=='settings') renderTop();   // 顶栏可见后重算金额字号（避免隐藏时量不到宽）
 }
 document.querySelectorAll('.tab[data-tab]').forEach(t=> t.onclick=()=>goTab(t.dataset.tab));
 

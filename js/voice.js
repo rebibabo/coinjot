@@ -29,15 +29,16 @@ async function startVoice(){
       if(perm && perm.speechRecognition === 'denied'){ alert('请在系统设置里允许麦克风/语音权限'); return; }
       setRec(true);
       const res = await SR.start({
-        language:'zh-CN', maxResults:1, partialResults:false,
-        popup:true, prompt:'请说出账目，如：今天打车35'
+        language:'zh-CN', maxResults:1, partialResults:false, popup:false
       });
       gotVoice(res && res.matches && res.matches[0]);
     }catch(err){
       setRec(false);
-      const m = err && (err.message || err);
-      if(/no match|didn't understand|没.*识别/i.test(String(m))) alert('没听清，请再说一次');
-      else alert('语音识别失败：' + m);
+      const m = String((err && (err.message || err.code || err)) || '');
+      const map = {'1':'网络超时','2':'语音服务不可用或网络受限','3':'录音失败','4':'服务出错',
+        '5':'客户端错误','6':'没听到声音','7':'没听清，请再说一次','8':'识别忙，请稍候','9':'缺少麦克风权限'};
+      const friendly = map[m] || (/no match|didn't understand/i.test(m) ? '没听清，请再说一次' : ('语音识别出错：'+m));
+      alert(friendly + (['2','4','5'].includes(m) ? '\n可改用文字或键盘输入' : ''));
     }
     return;
   }

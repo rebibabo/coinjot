@@ -34,6 +34,9 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Lock portrait orientation
+        run: sed -i '/android:name=".MainActivity"/a\            android:screenOrientation="portrait"' android/app/src/main/AndroidManifest.xml
+
       - name: Generate app icon & splash
         continue-on-error: true
         run: |

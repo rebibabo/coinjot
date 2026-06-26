@@ -94,6 +94,7 @@ document.getElementById('amProviders').addEventListener('click', e=>{
   const prov = PROVIDERS.find(p=>p.name===amProvider);
   // 点哪个来源，就把接口地址和推荐模型都换成该来源的（自定义则清空让用户手填）
   document.getElementById('amBase').value = prov ? prov.base : '';
+  document.getElementById('amKey').value = '';   // key 按来源不同，切换时清空重填
   amModelEdit = prov ? [...prov.models] : [];
   renderProviderChips(); renderModelChips();
 });

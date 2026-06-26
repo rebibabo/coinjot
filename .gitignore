@@ -15,3 +15,4 @@ data/
 记账*备份_*.json
 *.log
 .DS_Store
+install.sh

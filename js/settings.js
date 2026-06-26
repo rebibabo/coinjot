@@ -72,7 +72,19 @@ document.getElementById('btnClear').onclick=()=>{
   }
 };
 
-function download(name, text){
+async function download(name, text){
+  const cap = window.Capacitor;
+  // App 内：写文件 + 系统分享（WebView 不支持 blob 下载）
+  if(cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.Filesystem){
+    try{
+      const FS = cap.Plugins.Filesystem, Share = cap.Plugins.Share;
+      const w = await FS.writeFile({ path:name, data:text, directory:'CACHE', encoding:'utf8' });
+      if(Share && Share.share) await Share.share({ title:name, text:'记账导出', files:[w.uri] });
+      else showToast('已保存到：'+w.uri);
+    }catch(e){ alert('导出失败：'+(e.message||e)); }
+    return;
+  }
+  // 浏览器：常规下载
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'})); a.download=name; a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);

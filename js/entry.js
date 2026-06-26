@@ -113,6 +113,9 @@ function evalAmt(){
 }
 function updateAmt(){
   document.getElementById('showAmt').textContent = amtStr;
+  const conv = document.getElementById('amtConv');
+  const v = Number(evalAmt());
+  conv.textContent = (v>0 && entryCur!==statUnit) ? '≈ ' + fmt(toUnit(v, entryCur), unitSymbol()) : '';
 }
 function updateDateBtn(){
   const b=document.getElementById('dateBtn');
