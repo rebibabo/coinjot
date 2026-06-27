@@ -58,7 +58,7 @@
 
       <!-- 设置 -->
       <div class="page" id="page-settings">
-        <div class="sect-title">AI 智能记账<a class="sect-help" href="https://blog.csdn.net/m0_56222998/article/details/162360275" target="_blank" rel="noopener" title="如何申请免费额度">?</a></div>
+        <div class="sect-title">AI 智能记账<span class="sect-help" id="helpBtn" title="如何申请免费额度">?</span></div>
         <div class="card set-group">
           <div id="aiProfileList"></div>
         </div>
@@ -215,6 +215,65 @@
           <button class="mb del" id="amDel">删除</button>
           <button class="mb ok" id="amSave">保存</button>
         </div>
+      </div>
+    </div>
+
+    <!-- 申请免费 AI 额度教程（App 内置，离线可看） -->
+    <div class="help-sheet" id="helpSheet">
+      <div class="help-top">
+        <div class="help-back" id="helpBack">‹ 返回</div>
+        <div class="help-ttl">申请免费 AI 额度</div>
+      </div>
+      <div class="help-body">
+        <p>本 App 的「AI 智能记账」走 OpenAI 兼容接口，默认接 <b>ModelScope（魔搭社区）</b> 的免费模型推理服务。绑定阿里云账号并实名后，每天约 <b>2000 次</b>免费调用，足够日常使用。</p>
+        <div class="help-note">没绑定 / 没实名时调用会报：<code>401 please bind your alibaba cloud account before use</code></div>
+
+        <div class="help-h">0. 注册 / 登录 ModelScope</div>
+        <p>浏览器打开 <b>modelscope.cn</b>，用手机号或 GitHub 注册并登录。</p>
+
+        <div class="help-h">1. 进入「绑定阿里云」入口</div>
+        <p>点右上角<b>头像</b> → 菜单里点 <b>Bind Alibabacloud（绑定阿里云）</b>。这个页面的 Access Tokens（<code>default</code> / Write Permission）就是第 6 步要复制的 API Key。</p>
+        <img class="help-img" src="resources/help/01-bind-entry.png" alt="绑定阿里云入口">
+
+        <div class="help-h">2. 发起绑定</div>
+        <p>点 <b>Link your Alibaba Cloud account to get free resources</b>。</p>
+        <img class="help-img" src="resources/help/02-link-aliyun.png" alt="关联阿里云">
+
+        <div class="help-h">3. 登录 / 注册阿里云账号</div>
+        <p>已有账号直接登录；没有就点<b>前往注册</b>，免费注册一个。</p>
+        <img class="help-img" src="resources/help/03-aliyun-login.png" alt="登录阿里云">
+        <img class="help-img" src="resources/help/04-aliyun-registered.png" alt="注册成功">
+
+        <div class="help-h">4. 授权 ModelScope</div>
+        <p>阿里云弹出<b>第三方应用授权</b>页（申请方 ModelScope），点 <b>授权</b>。</p>
+        <img class="help-img" src="resources/help/05-authorize.png" alt="授权">
+
+        <div class="help-h">5. 完成阿里云实名认证（开通额度的前提）</div>
+        <p>若显示 <i>尚未实名认证（Not yet verified…）</i>，需先实名，免费 API 额度才会开通。</p>
+        <img class="help-img" src="resources/help/06-need-realname.png" alt="提示未实名">
+        <img class="help-img" src="resources/help/07-goto-realname.png" alt="前往实名">
+        <p>在账号认证页选 <b>个人认证 → 个人支付宝认证</b>（或扫脸认证），按提示完成。</p>
+        <img class="help-img" src="resources/help/08-realname-alipay.png" alt="个人支付宝实名">
+
+        <div class="help-h">6. 复制访问令牌 = API Key</div>
+        <p>回到 ModelScope 的 <b>访问令牌（Access Tokens）</b> 页，复制 <code>default</code> 那条 Write Permission 令牌（形如 <code>ms-xxxx…</code>）。令牌等同密码，别公开。</p>
+
+        <div class="help-h">7. 在 App 里配置</div>
+        <p>在魔搭「模型库」选一个支持 API 推理的对话模型，复制<b>完整模型 ID</b>（带前缀），如 <code>Qwen/Qwen3-30B-A3B-Instruct-2507</code>。然后到「我的 → AI 智能记账 → 新增配置」填：</p>
+        <ul class="help-ul">
+          <li><b>来源 Base URL：</b><code>https://api-inference.modelscope.cn/v1</code></li>
+          <li><b>API Key：</b>第 6 步的 <code>ms-…</code> 令牌</li>
+          <li><b>模型：</b>完整模型 ID，如 <code>Qwen/Qwen3-30B-A3B-Instruct-2507</code></li>
+        </ul>
+        <p>保存后回记账页输入「今天打车35」点<b>识别</b>，能自动出账即成功。</p>
+
+        <div class="help-h">常见报错</div>
+        <ul class="help-ul">
+          <li><code>401 …bind your alibaba cloud account…</code>：没绑定/没实名 → 完成 1–5 步</li>
+          <li><code>401 / Invalid token</code>：key 填错或过期 → 重新复制令牌</li>
+          <li><code>400</code> 模型不存在：模型 ID 没带前缀 → 用完整 <code>Qwen/…</code></li>
+          <li><code>429</code> 太频繁：稍等重试，或换一条配置/模型</li>
+        </ul>
       </div>
     </div>
 

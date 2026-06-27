@@ -38,12 +38,31 @@ function goTab(name){
 }
 document.querySelectorAll('.tab[data-tab]').forEach(t=> t.onclick=()=>goTab(t.dataset.tab));
 
+/* ===== 内置教程帮助页：问号打开，离线可看 ===== */
+const helpSheet = document.getElementById('helpSheet');
+function openHelp(){
+  helpSheet.scrollTop = 0;
+  const body = helpSheet.querySelector('.help-body'); if(body) body.scrollTop = 0;
+  helpSheet.classList.add('show');
+  const SB = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
+  if(SB){ SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{}); SB.setStyle({style:'LIGHT'}).catch(()=>{}); }
+}
+function closeHelp(){
+  helpSheet.classList.remove('show');
+  setStatusBar(document.querySelector('.tab.on')?.dataset?.tab || 'settings');  // 还原状态栏
+}
+document.getElementById('helpBtn').onclick = openHelp;
+document.getElementById('helpBack').onclick = closeHelp;
+
 /* ===== 返回键：逐层关闭弹层 → 回明细 → 退出 ===== */
-const BACK_LAYERS = ['catModal','aiModal','rateModal','curModal','filterModal','dpick','mpick','cpick','sheet'];
+const BACK_LAYERS = ['catModal','aiModal','rateModal','curModal','filterModal','dpick','mpick','cpick','sheet','helpSheet'];
 function handleBack(){
   for(const id of BACK_LAYERS){
     const el = document.getElementById(id);
-    if(el && el.classList.contains('show')){ el.classList.remove('show'); return true; }
+    if(el && el.classList.contains('show')){
+      if(id==='helpSheet') closeHelp(); else el.classList.remove('show');
+      return true;
+    }
   }
   return false;   // 没有可关的弹层
 }

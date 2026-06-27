@@ -57,6 +57,21 @@ body{
   font-size:30px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;
   text-decoration:none;cursor:pointer; }
 
+/* ---------- 内置教程帮助页（全屏可滚动） ---------- */
+.help-sheet{ position:absolute; inset:0; z-index:60; background:#f4f5f7; display:none; flex-direction:column; }
+.help-sheet.show{ display:flex; }
+.help-top{ flex:none; background:#3c7dff; color:#fff; padding:46px 40px 34px; display:flex; align-items:center; gap:28px; }
+.help-back{ font-size:40px; cursor:pointer; line-height:1; }
+.help-ttl{ font-size:44px; font-weight:700; }
+.help-body{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:36px 44px 140px; color:#222; font-size:34px; line-height:1.7; }
+.help-body p{ margin:18px 0; }
+.help-h{ font-size:40px; font-weight:800; color:#1a1a1a; margin:44px 0 16px; }
+.help-note{ background:#fff3f0; border:2px solid #ffd2c7; color:#c0392b; padding:20px 24px; border-radius:16px; margin:22px 0; font-size:30px; word-break:break-all; }
+.help-img{ width:100%; border-radius:16px; border:1px solid #e3e5ea; margin:16px 0; display:block; }
+.help-ul{ margin:16px 0; padding-left:42px; }
+.help-ul li{ margin:12px 0; word-break:break-all; }
+.help-body code{ background:#eceef3; padding:2px 10px; border-radius:8px; font-size:.9em; word-break:break-all; }
+
 /* ---------- 搜索 / 筛选 ---------- */
 .list-top{ display:flex; gap:20px; margin-bottom:24px; }
 .list-search{ flex:1; min-width:0; border:3px solid var(--line); background:var(--card);
