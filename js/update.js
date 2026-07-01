@@ -71,9 +71,9 @@ _updNow.onclick = async ()=>{
     });
     if(ph && ph.remove) ph.remove(); ph = null;
     _updNow.textContent = '安装中…';
-    await P.FileOpener.openFile({
-      path: res.path || res.uri,
-      mimeType:'application/vnd.android.package-archive'
+    await P.FileOpener.open({
+      filePath: res.path || res.uri,
+      contentType:'application/vnd.android.package-archive'
     });
     resetUpdBtn(); closeUpdate();   // 系统安装框已弹出，交给用户点“安装”
   }catch(e){
