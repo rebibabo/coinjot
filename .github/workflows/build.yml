@@ -162,7 +162,7 @@ jobs:
           ok=0
           for try in 1 2 3; do
             echo "第 $try 次上传..."
-            code=$(curl -sS --connect-timeout 30 --max-time 600 -o gitee_resp.json -w '%{http_code}' \
+            code=$(curl -sS --connect-timeout 30 --max-time 240 -o gitee_resp.json -w '%{http_code}' \
               -X POST "$api/releases/$id/attach_files?access_token=$GITEE_TOKEN" \
               -F "file=@coinjot.apk;type=application/vnd.android.package-archive") && \
             echo "HTTP $code" && cat gitee_resp.json && echo
