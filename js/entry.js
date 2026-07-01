@@ -31,7 +31,7 @@ renderContToggle();
 
 /* 点 + 自动聚焦语音输入：开后每次新增账目自动聚焦到「一句话记账」输入框，
    唤起键盘，用户直接点键盘上的 🎤 说话即可（默认关） */
-let autoFocus = localStorage.getItem('et_autofocus')==='1';
+let autoFocus = localStorage.getItem('et_autofocus')!=='0';   // 默认开启（仅显式关过才为关）
 const autoFocusSw = document.getElementById('autoFocusSw');
 function renderAutoFocusSw(){ if(autoFocusSw) autoFocusSw.classList.toggle('on', autoFocus); }
 if(autoFocusSw) autoFocusSw.onclick=()=>{ autoFocus=!autoFocus; localStorage.setItem('et_autofocus', autoFocus?'1':'0'); renderAutoFocusSw(); };

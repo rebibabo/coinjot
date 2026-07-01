@@ -138,6 +138,7 @@ body{
   background:#fff; box-shadow:0 3px 8px rgba(0,0,0,.2); transition:left .2s; }
 .set-switch.on{ background:var(--accent); }
 .set-switch.on i{ left:45px; }
+#rowAutoFocus{ border-top:2px solid var(--line); }   /* 与「添加配置」之间的分隔线 */
 
 /* ---------- 统计 ---------- */
 .stat-switch{ display:flex; background:#e7e8ee; border-radius:999px; padding:8px;

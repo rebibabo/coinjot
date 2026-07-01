@@ -52,7 +52,7 @@ function applyBackup(d){
       if(d.prefs[k]!=null) localStorage.setItem(k, d.prefs[k]);
     }
     if(typeof contMode!=='undefined'){ contMode = localStorage.getItem('et_cont')==='1'; renderContToggle(); }
-    if(typeof autoFocus!=='undefined'){ autoFocus = localStorage.getItem('et_autofocus')==='1'; renderAutoFocusSw(); }
+    if(typeof autoFocus!=='undefined'){ autoFocus = localStorage.getItem('et_autofocus')!=='0'; renderAutoFocusSw(); }
     if(typeof privacyOn!=='undefined'){ privacyOn = localStorage.getItem('et_privacy')==='1'; renderEye(); }
   }
   save(); saveCur();
