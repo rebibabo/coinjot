@@ -91,6 +91,16 @@ function setStatusBar(name){
 }
 setStatusBar('list');
 
+/* 隐私模式：点眼睛把所有金额变 ¥•••• */
+const eyeToggle = document.getElementById('eyeToggle');
+function renderEye(){ eyeToggle.textContent = privacyOn ? '🙈' : '👁'; }
+eyeToggle.onclick = ()=>{
+  privacyOn = !privacyOn;
+  localStorage.setItem('et_privacy', privacyOn ? '1' : '0');
+  renderEye(); renderAll();
+};
+renderEye();
+
 /* 轻提示 toast：可带一个操作按钮（如「撤销」） */
 let toastTimer = null;
 function showToast(msg, actLabel, actFn, ms=4000){

@@ -36,7 +36,12 @@ function save(){ normalizeCatOrder();
                  localStorage.setItem(LS_REC, JSON.stringify(records));
                  localStorage.setItem(LS_CAT, JSON.stringify(cats)); }
 function catById(type,id){ return cats[type].find(c=>c.id===id) || {name:'未分类',icon:'❓',color:'#9aa0ad'}; }
-function fmt(n, symbol){ return (symbol||'¥') + Number(n).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+let privacyOn = localStorage.getItem('et_privacy')==='1';   // 隐私模式：金额一键隐藏
+function fmt(n, symbol){
+  const sym = symbol||'¥';
+  if(privacyOn) return sym + '••••';
+  return sym + Number(n).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
 
 /* =================== 币种与汇率（基准 = 人民币 cny）=================== */
 const LS_CUR = 'et_currencies', LS_RATES = 'et_rates';
