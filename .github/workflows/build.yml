@@ -11,6 +11,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -131,3 +133,27 @@ jobs:
           name: 记账 coinjot · latest
           body: "最新构建的安卓安装包，下载 coinjot.apk 直接安装。"
           files: coinjot.apk
+
+      # 同步 APK 到 Gitee 的 latest Release（国内下载/应用内更新用）；未配 GITEE_TOKEN 则跳过
+      - name: Publish APK to Gitee Release
+        if: ${{ env.GITEE_TOKEN != '' }}
+        env:
+          OWNER: yuan-zhongsheng
+          REPO: coinjot
+          TAG: latest
+        run: |
+          api="https://gitee.com/api/v5/repos/$OWNER/$REPO"
+          rel=$(curl -s "$api/releases/tags/$TAG?access_token=$GITEE_TOKEN")
+          id=$(printf '%s' "$rel" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d.get("id","") if isinstance(d,dict) else "")' 2>/dev/null)
+          if [ -z "$id" ]; then
+            rel=$(curl -s -X POST "$api/releases" -d "access_token=$GITEE_TOKEN" -d "tag_name=$TAG" -d "name=coinjot $TAG" -d "body=最新构建，下载 coinjot.apk 直接安装。" -d "target_commitish=main")
+            id=$(printf '%s' "$rel" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("id",""))' 2>/dev/null)
+          fi
+          echo "gitee release id=$id"
+          [ -z "$id" ] && { echo "无法获取/创建 Gitee release：$rel"; exit 1; }
+          atts=$(curl -s "$api/releases/$id/attach_files?access_token=$GITEE_TOKEN")
+          printf '%s' "$atts" | python3 -c 'import sys,json;d=json.load(sys.stdin);[print(a["id"]) for a in (d if isinstance(d,list) else []) if a.get("name")=="coinjot.apk"]' | while read aid; do
+            [ -n "$aid" ] && curl -s -X DELETE "$api/releases/$id/attach_files/$aid?access_token=$GITEE_TOKEN" >/dev/null && echo "删除旧附件 $aid"
+          done
+          echo "上传 coinjot.apk 到 Gitee..."
+          curl -s -X POST "$api/releases/$id/attach_files" -F "access_token=$GITEE_TOKEN" -F "file=@coinjot.apk" | python3 -c 'import sys,json;d=json.load(sys.stdin);print("已上传:", d.get("name"), "->", d.get("download_url") or d.get("browser_download_url") or d)'
