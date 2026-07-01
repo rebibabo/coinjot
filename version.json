@@ -1,6 +1,6 @@
 {
-  "versionCode": 2,
-  "versionName": "1.0.1",
+  "versionCode": 1,
+  "versionName": "1.0.0",
   "apkUrl": "https://gitee.com/yuan-zhongsheng/coinjot/releases/download/latest/coinjot.apk",
-  "notes": "🎉 测试更新功能\n- 验证更新弹窗是否出现\n- 验证 App 内下载与唤起安装流程\n（本次 APK 内容与当前相同，仅用于测试）"
+  "notes": "首个版本"
 }
