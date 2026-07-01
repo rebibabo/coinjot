@@ -1,6 +1,6 @@
 {
-  "versionCode": 3,
-  "versionName": "1.0.2",
+  "versionCode": 4,
+  "versionName": "1.0.3",
   "apkUrl": "https://gitee.com/yuan-zhongsheng/coinjot/releases/download/latest/coinjot.apk",
-  "notes": "新增一键备份 + 统一弹窗\n- 一键备份到本机 / 从本机备份恢复，免选文件，并显示备份位置\n- 保留发送到微信、从文件导入\n- 全 App 弹窗改为统一样式，AI 识别报错更具体"
+  "notes": "备份路径优化\n- 本机备份改用全英文路径（CoinjotBackups）\n- 点「上次备份位置」即可复制路径到剪贴板"
 }

@@ -52,7 +52,18 @@ function exportBackup(){
 document.getElementById('btnExportJson').onclick = exportBackup;
 
 /* ---- 一键本机备份 / 恢复（存到 App 专属目录，免选文件） ---- */
-const BK_DIR = '记账备份';
+const BK_DIR = 'CoinjotBackups';   // 全英文，避免路径含中文
+let _lastBackupPath = '';          // 供「点击复制路径」使用
+async function copyText(t){
+  try{
+    const C = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Clipboard;
+    if(C && C.write){ await C.write({ string:t }); return true; }
+    if(navigator.clipboard && navigator.clipboard.writeText){ await navigator.clipboard.writeText(t); return true; }
+  }catch(e){}
+  try{ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); return true;
+  }catch(_){ return false; }
+}
 function nowStamp(){ const d=new Date(),p=n=>String(n).padStart(2,'0');
   return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'_'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds()); }
 function nativeFS(){ const c=window.Capacitor;
@@ -62,13 +73,18 @@ function shortPath(uri){ return (uri||'').replace(/^file:\/\//,'').replace(/^.*?
 function renderLastBackup(){
   const el = document.getElementById('lastBackupRow'); if(!el) return;
   const raw = localStorage.getItem('et_lastbackup');
-  if(!raw){ el.textContent = '上次备份：还没有本机备份'; return; }
+  if(!raw){ el.textContent = '上次备份：还没有本机备份'; _lastBackupPath=''; return; }
   try{ const b = JSON.parse(raw);
     const t = new Date(b.time), p=n=>String(n).padStart(2,'0');
+    _lastBackupPath = (b.uri||'').replace(/^file:\/\//,'');   // 去掉 file:// 前缀，复制真实路径
     el.innerHTML = `上次备份：${t.getFullYear()}-${p(t.getMonth()+1)}-${p(t.getDate())} ${p(t.getHours())}:${p(t.getMinutes())}`
-      + (b.uri ? `<br><span class="loc">位置：${shortPath(b.uri)}</span>` : '');
-  }catch(e){ el.textContent='上次备份：—'; }
+      + (b.uri ? `<br><span class="loc">位置：${shortPath(b.uri)}（点此复制路径）</span>` : '');
+  }catch(e){ el.textContent='上次备份：—'; _lastBackupPath=''; }
 }
+document.getElementById('lastBackupRow').onclick = async ()=>{
+  if(!_lastBackupPath) return;
+  showToast(await copyText(_lastBackupPath) ? '已复制备份路径' : '复制失败');
+};
 
 async function pruneBackups(FS){   // 只保留最近 10 份
   try{
@@ -81,7 +97,7 @@ async function pruneBackups(FS){   // 只保留最近 10 份
 
 async function backupLocal(){
   const text = JSON.stringify(backupData(), null, 2);
-  const name = '记账备份_'+nowStamp()+'.json';
+  const name = 'coinjot-backup-'+nowStamp()+'.json';
   const FS = nativeFS();
   if(!FS){ download(name, text); return; }   // 浏览器退回下载
   try{
