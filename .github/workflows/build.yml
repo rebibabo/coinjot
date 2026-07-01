@@ -180,3 +180,27 @@ jobs:
           curl -s "$api/releases/$id/attach_files?access_token=$GITEE_TOKEN" | python3 -c 'import sys,json;print("当前附件:", [a.get("name") for a in json.load(sys.stdin)])'
           echo "== 校验公开下载地址 =="
           curl -sIL "https://gitee.com/$OWNER/$REPO/releases/download/$TAG/coinjot.apk" | grep -iE "HTTP/|content-disposition" | head
+
+      # APK 已在 Gitee 后，再把 version.json 更新到 Gitee（顺序正确，用户不会下到旧包）
+      - name: Sync version.json to Gitee
+        if: ${{ env.GITEE_TOKEN != '' }}
+        env:
+          OWNER: yuan-zhongsheng
+          REPO: coinjot
+        run: |
+          api="https://gitee.com/api/v5/repos/$OWNER/$REPO/contents/version.json"
+          sha=$(curl -s "$api?ref=main&access_token=$GITEE_TOKEN" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d.get("sha","") if isinstance(d,dict) else "")')
+          b64=$(base64 -w0 version.json)
+          if [ -n "$sha" ]; then
+            echo "更新 Gitee version.json (sha=$sha)"
+            curl -s -X PUT "$api" -d "access_token=$GITEE_TOKEN" --data-urlencode "content=$b64" \
+              -d "message=chore: sync version.json" -d "branch=main" -d "sha=$sha" \
+              | python3 -c 'import sys,json;d=json.load(sys.stdin);print("已同步:", d.get("commit",{}).get("sha","") or d)'
+          else
+            echo "Gitee 无 version.json，创建"
+            curl -s -X POST "$api" -d "access_token=$GITEE_TOKEN" --data-urlencode "content=$b64" \
+              -d "message=chore: add version.json" -d "branch=main" \
+              | python3 -c 'import sys,json;print("已创建:", json.load(sys.stdin).get("commit",{}).get("sha",""))'
+          fi
+          echo "== 校验 Gitee version.json =="
+          curl -sL "https://gitee.com/$OWNER/$REPO/raw/main/version.json?t=$(date +%s)" | python3 -c 'import sys,json;print("versionCode =", json.load(sys.stdin).get("versionCode"))'
