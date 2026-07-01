@@ -6,9 +6,9 @@
 
 const APP_VERSION = { code: 1, name: '1.0.0' };   // ← 每次发版同步这里
 
-/* ↓↓↓ 改成你自己的 Gitee 用户名（仓库名默认 coinjot、默认分支 master） ↓↓↓ */
+/* ↓↓↓ 你的 Gitee 用户名（仓库名 coinjot、默认分支 main） ↓↓↓ */
 const GITEE_USER = 'yuan-zhongsheng';
-const VERSION_URL = `https://gitee.com/${GITEE_USER}/coinjot/raw/master/version.json`;
+const VERSION_URL = `https://gitee.com/${GITEE_USER}/coinjot/raw/main/version.json`;
 
 async function fetchJSON(url){
   const HTTP = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorHttp;
