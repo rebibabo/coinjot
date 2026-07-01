@@ -54,6 +54,9 @@ jobs:
       - name: Lock portrait orientation
         run: sed -i '/android:name=".MainActivity"/a\            android:screenOrientation="portrait"' android/app/src/main/AndroidManifest.xml
 
+      - name: Add install-packages permission (应用内更新唤起安装器)
+        run: sed -i 's#<application#<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>\n    <application#' android/app/src/main/AndroidManifest.xml
+
       - name: Generate app icon & splash
         continue-on-error: true
         run: |

@@ -84,6 +84,24 @@
           <div class="set-row btn danger" id="btnClear">清空所有数据</div>
         </div>
         <input type="file" id="importFile" accept=".json" style="display:none">
+
+        <div class="sect-title">关于</div>
+        <div class="card set-group">
+          <div class="set-row">当前版本 <b id="aboutVer" style="margin-left:auto;font-weight:600;">v1.0.0</b></div>
+          <div class="set-row btn" id="btnCheckUpd">检查更新<span class="arrow">›</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 发现新版本弹窗 -->
+    <div class="modal" id="updModal">
+      <div class="modal-card">
+        <div class="modal-title">发现新版本 <span id="updVer"></span></div>
+        <div class="upd-notes" id="updNotes"></div>
+        <div class="modal-btns">
+          <button class="mb cancel" id="updLater">以后再说</button>
+          <button class="mb ok" id="updNow">立即更新</button>
+        </div>
       </div>
     </div>
 
@@ -325,5 +343,6 @@
 <script src="js/entry.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/app.js"></script>
+<script src="js/update.js"></script>
 </body>
 </html>
