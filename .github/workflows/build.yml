@@ -10,6 +10,9 @@ permissions:
 
 jobs:
   build:
+    # 只有两种情况才打包发布：提交信息带 [release]，或在 Actions 页手动 Run workflow。
+    # 普通推送不构建，避免每次提交都覆盖 APK。
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') }}
     runs-on: ubuntu-latest
     env:
       GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
