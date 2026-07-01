@@ -66,6 +66,19 @@ document.getElementById('curCodeIn').addEventListener('keydown', e=>{ if(e.key==
 document.getElementById('curClose').onclick = ()=> curModal.classList.remove('show');
 curModal.onclick = e=>{ if(e.target===curModal) curModal.classList.remove('show'); };
 
+/* 明细页汇率警告：有外币记录/统计单位缺汇率时提示，点击更新 */
+function renderRateWarn(){
+  const el = document.getElementById('rateWarn'); if(!el) return;
+  const miss = new Set();
+  records.forEach(r=>{ if(r.currency && r.currency!=='cny' && rateOf(r.currency)==null) miss.add(r.currency); });
+  if(statUnit!=='cny' && rateOf(statUnit)==null) miss.add(statUnit);
+  if(miss.size){
+    el.style.display='';
+    el.textContent = '⚠️ 部分外币暂无汇率，金额可能不准 · 点此更新汇率';
+  } else el.style.display='none';
+}
+document.getElementById('rateWarn').onclick = ()=> updateRates(true);
+
 /* ---- 汇率：按日缓存，每天首次自动更新；也可手动 ---- */
 function refreshRateStatus(){
   const el = document.getElementById('rateStatus');

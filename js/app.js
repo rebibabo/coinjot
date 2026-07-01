@@ -55,7 +55,7 @@ document.getElementById('helpBtn').onclick = openHelp;
 document.getElementById('helpBack').onclick = closeHelp;
 
 /* ===== 返回键：逐层关闭弹层 → 回明细 → 退出 ===== */
-const BACK_LAYERS = ['appDialog','updModal','catModal','aiModal','rateModal','curModal','filterModal','dpick','mpick','cpick','sheet','helpSheet'];
+const BACK_LAYERS = ['appDialog','updModal','catModal','aiModal','rateModal','curModal','filterModal','dpick','mpick','cpick','sheet','helpSheet','logSheet'];
 function handleBack(){
   for(const id of BACK_LAYERS){
     const el = document.getElementById(id);

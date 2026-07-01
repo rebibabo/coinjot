@@ -82,6 +82,15 @@ body{
 /* ---------- 搜索 / 筛选 ---------- */
 .today-spend{ margin:4px 4px 22px; padding:22px 30px; border-radius:20px; background:#eaf1ff;
   color:#3c7dff; font-size:38px; font-weight:700; }
+.rate-warn{ display:none; margin:4px 4px 18px; padding:20px 28px; border-radius:18px;
+  background:#fff3e6; color:#c96a1b; font-size:30px; font-weight:600; cursor:pointer; }
+/* 错误日志页 */
+.log-clear{ margin-left:auto; font-size:34px; cursor:pointer; }
+.log-empty{ color:#999; text-align:center; margin-top:80px; font-size:34px; }
+.log-item{ border-bottom:2px solid #eceef3; padding:20px 4px; }
+.log-time{ font-size:26px; color:#8a8f99; }
+.log-msg{ font-size:32px; color:#c0392b; word-break:break-word; margin:6px 0; }
+.log-src{ font-size:24px; color:#8a8f99; word-break:break-all; }
 .list-top{ display:flex; gap:20px; margin-bottom:24px; }
 .list-search{ flex:1; min-width:0; border:3px solid var(--line); background:var(--card);
   border-radius:999px; padding:26px 40px; font-size:38px; outline:none; }
