@@ -8,6 +8,11 @@ on:
 permissions:
   contents: write
 
+# 同一时间只跑一个构建，避免多个 [release] 并发操作同一个 Gitee release 互相删附件
+concurrency:
+  group: build-apk
+  cancel-in-progress: true
+
 jobs:
   build:
     # 只有两种情况才打包发布：提交信息带 [release]，或在 Actions 页手动 Run workflow。
@@ -171,3 +176,7 @@ jobs:
           done
           [ "$ok" = "1" ] || { echo "Gitee 上传多次失败"; exit 1; }
           python3 -c 'import json;d=json.load(open("gitee_resp.json"));print("已上传:", d.get("name"), "->", d.get("download_url") or d.get("browser_download_url") or d)' 2>/dev/null || true
+          echo "== 校验附件已挂到 release =="
+          curl -s "$api/releases/$id/attach_files?access_token=$GITEE_TOKEN" | python3 -c 'import sys,json;print("当前附件:", [a.get("name") for a in json.load(sys.stdin)])'
+          echo "== 校验公开下载地址 =="
+          curl -sIL "https://gitee.com/$OWNER/$REPO/releases/download/$TAG/coinjot.apk" | grep -iE "HTTP/|content-disposition" | head
