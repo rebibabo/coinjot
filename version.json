@@ -1,6 +1,6 @@
 {
-  "versionCode": 5,
-  "versionName": "1.0.4",
+  "versionCode": 6,
+  "versionName": "1.0.5",
   "apkUrl": "https://gitee.com/yuan-zhongsheng/coinjot/releases/download/latest/coinjot.apk",
-  "notes": "多项增强\n- 隐私模式：明细页右上角眼睛，一键把金额隐藏为 ¥••••\n- 每天自动备份到本机（保留最近7天），数据更安心\n- 缺汇率时明细页提示，避免外币金额算错\n- 新增错误日志（我的→关于→错误日志）"
+  "notes": "隐私图标优化\n- 隐私模式图标改为 🐵 显示 / 🙈 隐藏，更友好"
 }

@@ -93,7 +93,7 @@ setStatusBar('list');
 
 /* 隐私模式：点眼睛把所有金额变 ¥•••• */
 const eyeToggle = document.getElementById('eyeToggle');
-function renderEye(){ eyeToggle.textContent = privacyOn ? '🙈' : '👁'; }
+function renderEye(){ eyeToggle.textContent = privacyOn ? '🙈' : '🐵'; }   // 🐵显示 / 🙈隐藏
 eyeToggle.onclick = ()=>{
   privacyOn = !privacyOn;
   localStorage.setItem('et_privacy', privacyOn ? '1' : '0');

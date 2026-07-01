@@ -35,7 +35,7 @@ body{
 
 /* ---------- 顶部汇总卡 ---------- */
 .topbar{ padding:90px 60px 36px; color:#fff; flex:none; background:#3c7dff; position:relative; }
-.eye-toggle{ position:absolute; top:40px; right:50px; font-size:46px; line-height:1; cursor:pointer; opacity:.92; }
+.eye-toggle{ position:absolute; top:40px; right:50px; font-size:44px; line-height:1; cursor:pointer; opacity:.95; }
 .month-row{ display:flex; align-items:center; gap:24px; font-size:46px; font-weight:600; position:relative; }
 .month-row #monthLabel{ cursor:pointer; }
 .month-row .nav{ width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.18);

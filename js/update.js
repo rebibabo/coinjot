@@ -4,7 +4,7 @@
             2) 改仓库根 version.json（同样的 code/name + 新的 notes）
             3) 把新 APK 传到 Gitee Release，version.json 传到 Gitee 仓库 raw 路径。 */
 
-const APP_VERSION = { code: 5, name: '1.0.4' };   // ← 每次发版同步这里
+const APP_VERSION = { code: 6, name: '1.0.5' };   // ← 每次发版同步这里
 
 /* ↓↓↓ 你的 Gitee 用户名（仓库名 coinjot、默认分支 main） ↓↓↓ */
 const GITEE_USER = 'yuan-zhongsheng';
