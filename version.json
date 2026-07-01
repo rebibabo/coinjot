@@ -1,6 +1,6 @@
 {
-  "versionCode": 6,
-  "versionName": "1.0.5",
+  "versionCode": 7,
+  "versionName": "1.0.6",
   "apkUrl": "https://gitee.com/yuan-zhongsheng/coinjot/releases/download/latest/coinjot.apk",
-  "notes": "隐私图标优化\n- 隐私模式图标改为 🐵 显示 / 🙈 隐藏，更友好"
+  "notes": "语音记账更顺手\n- 新增开关「点 + 自动聚焦语音输入」（我的 → AI 智能记账里打开）\n- 开启后点 + 号直接弹键盘，点键盘上的 🎤 说话即可\n- 连续记账/隐私/自动聚焦等开关也纳入备份"
 }

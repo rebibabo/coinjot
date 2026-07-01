@@ -29,6 +29,14 @@ function renderContToggle(){ contToggle.classList.toggle('on', contMode); }
 contToggle.onclick=()=>{ contMode=!contMode; localStorage.setItem('et_cont', contMode?'1':'0'); renderContToggle(); };
 renderContToggle();
 
+/* 点 + 自动聚焦语音输入：开后每次新增账目自动聚焦到「一句话记账」输入框，
+   唤起键盘，用户直接点键盘上的 🎤 说话即可（默认关） */
+let autoFocus = localStorage.getItem('et_autofocus')==='1';
+const autoFocusSw = document.getElementById('autoFocusSw');
+function renderAutoFocusSw(){ if(autoFocusSw) autoFocusSw.classList.toggle('on', autoFocus); }
+if(autoFocusSw) autoFocusSw.onclick=()=>{ autoFocus=!autoFocus; localStorage.setItem('et_autofocus', autoFocus?'1':'0'); renderAutoFocusSw(); };
+renderAutoFocusSw();
+
 document.getElementById('tabAdd').onclick=()=>openSheet();
 /* 传入 rec 进入编辑模式（预填该记录），不传则为新增 */
 function openSheet(rec){
@@ -48,6 +56,11 @@ function openSheet(rec){
   }
   updateAmt(); updateDateBtn(); updateCurBtn();
   sheet.classList.add('show');
+  // 新增账目 + 已开自动聚焦 → 聚焦语音输入框唤起键盘（编辑模式不打扰）
+  if(!rec && autoFocus){
+    const ai = document.getElementById('aiInput');
+    if(ai) setTimeout(()=>{ ai.focus(); }, 250);   // 待弹层动画就位再聚焦，键盘才稳定弹出
+  }
 }
 function closeSheet(){ sheet.classList.remove('show'); }
 sheet.onclick=e=>{ if(e.target===sheet) closeSheet(); };

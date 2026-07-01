@@ -27,6 +27,11 @@ function backupData(){
   return {
     v:2, records, cats, currencies, statUnit,
     ai:{ profiles:aiProfiles, activeId:aiActiveId, activeModel:aiActiveModel },
+    prefs:{
+      et_cont: localStorage.getItem('et_cont'),
+      et_privacy: localStorage.getItem('et_privacy'),
+      et_autofocus: localStorage.getItem('et_autofocus')
+    },
     exportedAt:new Date().toISOString()
   };
 }
@@ -41,6 +46,14 @@ function applyBackup(d){
     aiActiveId = aiProfiles.some(p=>p.id===d.ai.activeId) ? d.ai.activeId : aiProfiles[0].id;
     aiActiveModel = d.ai.activeModel || '';
     saveProfiles();
+  }
+  if(d.prefs){   // 还原开关类偏好，并刷新对应 UI
+    for(const k of ['et_cont','et_privacy','et_autofocus']){
+      if(d.prefs[k]!=null) localStorage.setItem(k, d.prefs[k]);
+    }
+    if(typeof contMode!=='undefined'){ contMode = localStorage.getItem('et_cont')==='1'; renderContToggle(); }
+    if(typeof autoFocus!=='undefined'){ autoFocus = localStorage.getItem('et_autofocus')==='1'; renderAutoFocusSw(); }
+    if(typeof privacyOn!=='undefined'){ privacyOn = localStorage.getItem('et_privacy')==='1'; renderEye(); }
   }
   save(); saveCur();
   renderCatEditors(); renderCurEditors(); renderAiProfiles(); renderAll();
