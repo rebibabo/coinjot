@@ -118,4 +118,4 @@ function monthRecords(){
 }
 
 /* 整页重绘：顶部 + 明细 + 统计 */
-function renderAll(){ renderTop(); renderList(); renderStats(); }
+function renderAll(){ renderTop(); renderTodaySpend(); renderList(); renderStats(); }

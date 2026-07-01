@@ -1,4 +1,13 @@
 /* =================== 明细页：顶部汇总 + 按日分组列表 =================== */
+/* 今日已花：统计今天的支出合计（折算到统计单位） */
+function renderTodaySpend(){
+  const el = document.getElementById('todaySpend');
+  if(!el) return;
+  const td = today();
+  let sum = 0;
+  records.forEach(r=>{ if(r.type==='expense' && r.date.slice(0,10)===td) sum += toUnit(r.amount, r.currency); });
+  el.textContent = '今天已花 ' + fmt(sum, unitSymbol());
+}
 function renderTop(){
   document.getElementById('monthLabel').textContent = `${viewYear}年${viewMonth+1}月`;
   let exp=0, inc=0;
