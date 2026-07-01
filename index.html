@@ -79,9 +79,12 @@
         </div>
         <div class="sect-title">数据</div>
         <div class="card set-group">
-          <div class="set-row btn" id="btnExportJson">导出备份 (JSON)<span class="arrow">›</span></div>
+          <div class="set-row btn" id="btnBackupLocal">一键备份到本机<span class="arrow">›</span></div>
+          <div class="set-row btn" id="btnRestoreLocal">从本机备份恢复<span class="arrow">›</span></div>
+          <div class="set-row hint-row" id="lastBackupRow">上次备份：—</div>
+          <div class="set-row btn" id="btnExportJson">发送备份到微信/网盘<span class="arrow">›</span></div>
+          <div class="set-row btn" id="btnImport">从文件导入备份<span class="arrow">›</span></div>
           <div class="set-row btn" id="btnExportCsv">导出明细 (CSV)<span class="arrow">›</span></div>
-          <div class="set-row btn" id="btnImport">导入备份<span class="arrow">›</span></div>
           <div class="set-row btn danger" id="btnClear">清空所有数据</div>
         </div>
         <input type="file" id="importFile" accept=".json" style="display:none">
@@ -91,6 +94,15 @@
           <div class="set-row">当前版本 <b id="aboutVer" style="margin-left:auto;font-weight:600;">v1.0.0</b></div>
           <div class="set-row btn" id="btnCheckUpd">检查更新<span class="arrow">›</span></div>
         </div>
+      </div>
+    </div>
+
+    <!-- 通用弹窗（替代系统 alert/confirm） -->
+    <div class="modal" id="appDialog">
+      <div class="modal-card">
+        <div class="modal-title" id="dlgTitle" style="display:none"></div>
+        <div class="dlg-msg" id="dlgMsg"></div>
+        <div class="modal-btns" id="dlgBtns"></div>
       </div>
     </div>
 
@@ -336,6 +348,7 @@
 </div>
 
 <!-- 逻辑模块：按依赖顺序加载（前者定义的全局供后者使用） -->
+<script src="js/dialog.js"></script>
 <script src="js/data.js"></script>
 <script src="js/list.js"></script>
 <script src="js/stats.js"></script>

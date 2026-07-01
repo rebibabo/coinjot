@@ -152,8 +152,8 @@ dpick.onclick=e=>{
 
 function commitEntry(){
   const val = Math.round(parseFloat(evalAmt())*100)/100;
-  if(!val || val<=0){ alert('请输入金额'); return; }
-  if(!entryCat){ alert('请选择分类'); return; }
+  if(!val || val<=0){ showAlert('请输入金额'); return; }
+  if(!entryCat){ showAlert('请选择分类'); return; }
   const note = document.getElementById('noteIn').value.trim();
   if(editingId){
     // 编辑：更新原记录，保留原有的时间部分

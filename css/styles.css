@@ -72,6 +72,10 @@ body{
 .help-ul li{ margin:12px 0; word-break:break-all; }
 .help-body code{ background:#eceef3; padding:2px 10px; border-radius:8px; font-size:.9em; word-break:break-all; }
 
+/* 通用弹窗正文 */
+.dlg-msg{ font-size:36px; line-height:1.6; color:#333; text-align:center;
+  padding:12px 8px 6px; white-space:pre-wrap; word-break:break-word; }
+
 /* 更新弹窗说明文字 */
 .upd-notes{ font-size:32px; line-height:1.7; color:#444; margin:16px 4px 8px; white-space:pre-wrap; word-break:break-word; max-height:600px; overflow-y:auto; }
 
@@ -162,6 +166,8 @@ body{
 .set-row .arrow{ color:var(--sub);font-size:40px; }
 .set-row.btn{ cursor:pointer; }
 .set-row.danger{ color:var(--expense); }
+.set-row.hint-row{ display:block; font-size:30px; color:var(--sub); padding:26px 44px; }
+.set-row.hint-row .loc{ font-size:26px; word-break:break-all; }
 .cat-edit{ display:flex;flex-wrap:wrap;gap:26px;padding:44px; }
 .cat-chip{ display:flex;align-items:center;gap:14px;background:#f1f2f6;
   border-radius:999px;padding:22px 34px;font-size:38px; }

@@ -91,7 +91,7 @@ async function updateRates(force){
     return true;
   }catch(err){
     refreshRateStatus();
-    if(force) alert('汇率更新失败：' + (err.message || err));
+    if(force) showAlert('汇率更新失败：' + (err.message || err));
     return false;
   }finally{
     if(force) btn.style.pointerEvents='';

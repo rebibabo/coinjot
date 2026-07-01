@@ -163,12 +163,13 @@ document.getElementById('amSave').onclick = ()=>{
 };
 document.getElementById('amDel').onclick = ()=>{
   if(!amCtx || amCtx.mode!=='edit') return;
-  if(aiProfiles.length<=1){ alert('至少保留一个配置'); return; }
-  if(confirm('删除该配置？')){
+  if(aiProfiles.length<=1){ showAlert('至少保留一个配置'); return; }
+  showConfirm('删除该配置？').then(ok=>{
+    if(!ok) return;
     aiProfiles = aiProfiles.filter(p=>p.id!==amCtx.id);
     if(!aiProfiles.some(p=>p.id===aiActiveId)) aiActiveId = aiProfiles[0].id;
     saveProfiles(); renderAiProfiles(); closeAiModal();
-  }
+  });
 };
 
 /* ---- 语音/文字输入触发 ---- */
@@ -180,14 +181,14 @@ aiInput.addEventListener('keydown', e=>{ if(e.key==='Enter') runAI(); });
 async function runAI(){
   const text = aiInput.value.trim();
   if(!text) return;
-  if(!getKey()){ alert('请先到「我的 → AI 智能记账」添加/选择一个带 key 的配置'); return; }
+  if(!getKey()){ showAlert('请先到「我的 → AI 智能记账」添加/选择一个带 key 的配置'); return; }
   aiBtn.disabled = true;
   aiBtn.innerHTML = '<span class="spin"></span>';
   try{
     const arr = await callLLM(text);
     saveMultiple(arr);                                 // 单笔/多笔都直接入账，不再填表复核
   }catch(err){
-    alert('识别失败：' + (err.message || err));
+    showAlert('识别失败，请检查网络或 AI 配置。\n' + (err.message || err), '识别失败');
   }finally{
     aiBtn.disabled = false;
     aiBtn.textContent = '识别';
@@ -209,7 +210,7 @@ function saveMultiple(arr){
       currency:entryCur, date:iso, createdAt:Date.now() });
     n++;
   });
-  if(!n){ alert('没解析出有效记录'); return; }
+  if(!n){ showAlert('没识别出有效金额。\n把金额说清楚试试，例如「打车 35」「午饭 25」。', '没记成'); return; }
   save();
   const [jy,jm] = entryDate.split('-').map(Number); viewYear=jy; viewMonth=jm-1;
   aiInput.value=''; renderAll(); closeSheet();
@@ -244,8 +245,7 @@ type<>amount<>category<>note
     if(content){ const arr = parseLines(content); last = arr;
       const ok = arr.filter(validEntry); if(ok.length) return ok; }
   }
-  if(!last.length) throw new Error('没解析出有效记录');
-  return last;                                 // 3 次仍不合规：原样返回，applyAIResult 会兜底
+  return last;   // 可能为空或不合规；由 saveMultiple 统一给出友好提示（网络/接口错误已在上面抛出）
 }
 
 /* 解析多行 "支/收<>amount<>category<>note"，每行一笔 */

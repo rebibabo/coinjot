@@ -11,7 +11,7 @@ function renderCatEditors(){
 document.getElementById('page-settings').addEventListener('click', e=>{
   const rm = e.target.closest('[data-rmcat]');
   if(rm){ const [type,id]=rm.dataset.rmcat.split(':');
-    if(cats[type].length<=1){ alert('至少保留一个分类'); return; }
+    if(cats[type].length<=1){ showAlert('至少保留一个分类'); return; }
     openMergePicker(type, id); return; }
   const ed = e.target.closest('[data-editcat]');
   if(ed){ const [type,id]=ed.dataset.editcat.split(':'); editCategory(type,id); return; }
@@ -22,15 +22,94 @@ document.getElementById('page-settings').addEventListener('click', e=>{
 function editCategory(type, id){ openCatModal({mode:'edit', type, id}); }
 function addCategory(type){      openCatModal({mode:'add',  type}); }
 
-function exportBackup(){
-  const data = {
+/* 完整备份对象（记录/分类/币种/统计单位/AI 配置） */
+function backupData(){
+  return {
     v:2, records, cats, currencies, statUnit,
     ai:{ profiles:aiProfiles, activeId:aiActiveId, activeModel:aiActiveModel },
     exportedAt:new Date().toISOString()
   };
-  download('记账完整备份_'+today()+'.json', JSON.stringify(data,null,2));
+}
+/* 应用一份备份对象到当前状态（导入/恢复共用） */
+function applyBackup(d){
+  records = d.records;
+  if(d.cats) cats = d.cats;
+  if(Array.isArray(d.currencies) && d.currencies.length) currencies = d.currencies;
+  if(d.statUnit){ statUnit = d.statUnit; localStorage.setItem(LS_UNIT, statUnit); }
+  if(d.ai && Array.isArray(d.ai.profiles) && d.ai.profiles.length){
+    aiProfiles = d.ai.profiles.map(normProfile);
+    aiActiveId = aiProfiles.some(p=>p.id===d.ai.activeId) ? d.ai.activeId : aiProfiles[0].id;
+    aiActiveModel = d.ai.activeModel || '';
+    saveProfiles();
+  }
+  save(); saveCur();
+  renderCatEditors(); renderCurEditors(); renderAiProfiles(); renderAll();
+}
+
+function exportBackup(){
+  download('记账完整备份_'+today()+'.json', JSON.stringify(backupData(),null,2));
 }
 document.getElementById('btnExportJson').onclick = exportBackup;
+
+/* ---- 一键本机备份 / 恢复（存到 App 专属目录，免选文件） ---- */
+const BK_DIR = '记账备份';
+function nowStamp(){ const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'_'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds()); }
+function nativeFS(){ const c=window.Capacitor;
+  return (c && c.isNativePlatform && c.isNativePlatform() && c.Plugins && c.Plugins.Filesystem) ? c.Plugins.Filesystem : null; }
+function shortPath(uri){ return (uri||'').replace(/^file:\/\//,'').replace(/^.*?\/Android\//,'Android/'); }
+
+function renderLastBackup(){
+  const el = document.getElementById('lastBackupRow'); if(!el) return;
+  const raw = localStorage.getItem('et_lastbackup');
+  if(!raw){ el.textContent = '上次备份：还没有本机备份'; return; }
+  try{ const b = JSON.parse(raw);
+    const t = new Date(b.time), p=n=>String(n).padStart(2,'0');
+    el.innerHTML = `上次备份：${t.getFullYear()}-${p(t.getMonth()+1)}-${p(t.getDate())} ${p(t.getHours())}:${p(t.getMinutes())}`
+      + (b.uri ? `<br><span class="loc">位置：${shortPath(b.uri)}</span>` : '');
+  }catch(e){ el.textContent='上次备份：—'; }
+}
+
+async function pruneBackups(FS){   // 只保留最近 10 份
+  try{
+    const list = (await FS.readdir({ directory:'EXTERNAL', path:BK_DIR })).files || [];
+    const names = list.map(f=> typeof f==='string'?f:f.name).filter(n=>n.endsWith('.json')).sort();
+    for(const n of names.slice(0, Math.max(0, names.length-10)))
+      await FS.deleteFile({ directory:'EXTERNAL', path:BK_DIR+'/'+n });
+  }catch(e){}
+}
+
+async function backupLocal(){
+  const text = JSON.stringify(backupData(), null, 2);
+  const name = '记账备份_'+nowStamp()+'.json';
+  const FS = nativeFS();
+  if(!FS){ download(name, text); return; }   // 浏览器退回下载
+  try{
+    const w = await FS.writeFile({ path:BK_DIR+'/'+name, data:text, directory:'EXTERNAL', encoding:'utf8', recursive:true });
+    localStorage.setItem('et_lastbackup', JSON.stringify({ time:Date.now(), name, uri:w.uri }));
+    await pruneBackups(FS); renderLastBackup();
+    showToast('已备份到本机 ✓');
+  }catch(e){ showAlert('备份失败：'+(e.message||e)); }
+}
+async function restoreLocal(){
+  const FS = nativeFS();
+  if(!FS){ showAlert('本机恢复仅 App 内可用；浏览器请用「从文件导入备份」'); return; }
+  try{
+    const list = (await FS.readdir({ directory:'EXTERNAL', path:BK_DIR })).files || [];
+    const names = list.map(f=> typeof f==='string'?f:f.name).filter(n=>n.endsWith('.json')).sort();
+    if(!names.length){ showAlert('还没有本机备份，先点「一键备份到本机」'); return; }
+    const latest = names[names.length-1];
+    if(!(await showConfirm('从最近备份恢复：\n'+latest+'\n\n将覆盖当前所有数据，确定？'))) return;
+    const r = await FS.readFile({ directory:'EXTERNAL', path:BK_DIR+'/'+latest, encoding:'utf8' });
+    const d = JSON.parse(typeof r.data==='string'?r.data:'');
+    if(!Array.isArray(d.records)) throw new Error('备份内容不正确');
+    applyBackup(d);
+    showAlert('已从本机备份恢复 ✓');
+  }catch(e){ showAlert('恢复失败：'+(e.message||e)); }
+}
+document.getElementById('btnBackupLocal').onclick = backupLocal;
+document.getElementById('btnRestoreLocal').onclick = restoreLocal;
+renderLastBackup();
 document.getElementById('btnExportCsv').onclick=()=>{
   const head='日期,类型,分类,币种,金额,备注\n';
   const rows=records.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>{
@@ -46,29 +125,19 @@ document.getElementById('importFile').onchange=e=>{
   const f=e.target.files[0]; if(!f) return; const r=new FileReader();
   r.onload=()=>{ try{ const d=JSON.parse(r.result);
     if(!Array.isArray(d.records)) throw 0;
-    if(confirm('导入将覆盖当前所有数据（含 AI 配置、币种设置），确定？')){
-      records = d.records;
-      if(d.cats) cats = d.cats;
-      if(Array.isArray(d.currencies) && d.currencies.length) currencies = d.currencies;
-      if(d.statUnit){ statUnit = d.statUnit; localStorage.setItem(LS_UNIT, statUnit); }
-      if(d.ai && Array.isArray(d.ai.profiles) && d.ai.profiles.length){
-        aiProfiles = d.ai.profiles.map(normProfile);
-        aiActiveId = aiProfiles.some(p=>p.id===d.ai.activeId) ? d.ai.activeId : aiProfiles[0].id;
-        aiActiveModel = d.ai.activeModel || '';
-        saveProfiles();
-      }
-      save(); saveCur();
-      renderCatEditors(); renderCurEditors(); renderAiProfiles(); renderAll();
-      alert('导入成功');
-    }
-  }catch(err){ alert('文件格式不正确'); } };
+    showConfirm('导入将覆盖当前所有数据（含 AI 配置、币种设置），确定？').then(ok=>{
+      if(!ok) return;
+      applyBackup(d);
+      showAlert('导入成功');
+    });
+  }catch(err){ showAlert('文件格式不正确'); } };
   r.readAsText(f); e.target.value='';
 };
-document.getElementById('btnClear').onclick=()=>{
-  if(confirm('确定清空所有记账数据？\n清空前会自动导出一份完整备份')){
-    exportBackup();   // 先自动备份，防手滑
+document.getElementById('btnClear').onclick=async ()=>{
+  if(await showConfirm('确定清空所有记账数据？\n清空前会自动备份到本机（可随时恢复）')){
+    await backupLocal();   // 先自动备份到本机，防手滑
     records=[]; cats=JSON.parse(JSON.stringify(DEFAULT_CATS)); save(); renderCatEditors(); renderAll();
-    showToast('已清空 · 备份已下载');
+    showToast('已清空 · 已自动备份到本机');
   }
 };
 
@@ -81,7 +150,7 @@ async function download(name, text){
       const w = await FS.writeFile({ path:name, data:text, directory:'CACHE', encoding:'utf8' });
       if(Share && Share.share) await Share.share({ title:name, text:'记账导出', files:[w.uri] });
       else showToast('已保存到：'+w.uri);
-    }catch(e){ alert('导出失败：'+(e.message||e)); }
+    }catch(e){ showAlert('导出失败：'+(e.message||e)); }
     return;
   }
   // 浏览器：常规下载
@@ -152,7 +221,7 @@ catModal.onclick = e=>{ if(e.target===catModal) closeCatModal(); };
 document.getElementById('cmSave').onclick = ()=>{
   if(!cmCtx) return;
   const name = document.getElementById('cmName').value.trim();
-  if(!name){ alert('请输入分类名称'); return; }
+  if(!name){ showAlert('请输入分类名称'); return; }
   if(cmCtx.mode==='edit'){
     const c = cats[cmCtx.type].find(x=>x.id===cmCtx.id); if(c){ c.name=name; c.icon=cmSel; }
   } else {
