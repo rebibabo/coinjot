@@ -158,5 +158,16 @@ jobs:
           printf '%s' "$atts" | python3 -c 'import sys,json;d=json.load(sys.stdin);[print(a["id"]) for a in (d if isinstance(d,list) else []) if a.get("name")=="coinjot.apk"]' | while read aid; do
             [ -n "$aid" ] && curl -s -X DELETE "$api/releases/$id/attach_files/$aid?access_token=$GITEE_TOKEN" >/dev/null && echo "删除旧附件 $aid"
           done
-          echo "上传 coinjot.apk 到 Gitee..."
-          curl -s -X POST "$api/releases/$id/attach_files" -F "access_token=$GITEE_TOKEN" -F "file=@coinjot.apk" | python3 -c 'import sys,json;d=json.load(sys.stdin);print("已上传:", d.get("name"), "->", d.get("download_url") or d.get("browser_download_url") or d)'
+          echo "上传 coinjot.apk 到 Gitee（$(du -h coinjot.apk | cut -f1)）..."
+          ok=0
+          for try in 1 2 3; do
+            echo "第 $try 次上传..."
+            code=$(curl -sS --connect-timeout 30 --max-time 600 -o gitee_resp.json -w '%{http_code}' \
+              -X POST "$api/releases/$id/attach_files?access_token=$GITEE_TOKEN" \
+              -F "file=@coinjot.apk;type=application/vnd.android.package-archive") && \
+            echo "HTTP $code" && cat gitee_resp.json && echo
+            if [ "$code" = "201" ] || [ "$code" = "200" ]; then ok=1; break; fi
+            echo "上传未成功(HTTP $code)，10s 后重试..."; sleep 10
+          done
+          [ "$ok" = "1" ] || { echo "Gitee 上传多次失败"; exit 1; }
+          python3 -c 'import json;d=json.load(open("gitee_resp.json"));print("已上传:", d.get("name"), "->", d.get("download_url") or d.get("browser_download_url") or d)' 2>/dev/null || true
