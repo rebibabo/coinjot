@@ -123,9 +123,11 @@ body{
 .rec .cat{ font-size:42px;font-weight:600; }
 .rec .note{ font-size:32px;color:var(--sub);margin-top:8px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-.rec .amt{ font-size:46px;font-weight:700;flex:none; }
+.rec .amt-wrap{ flex:none;text-align:right; }
+.rec .amt{ font-size:46px;font-weight:700; }
 .rec .amt.expense{ color:var(--expense); }
 .rec .amt.income{ color:var(--income); }
+.rec .amt-cny{ margin-top:8px;font-size:28px;color:var(--sub); }
 .rec .del{ width:0;overflow:hidden;transition:width .2s; }
 .rec.open .del{ width:120px; }
 .rec .del button{ width:104px;height:104px;border:none;border-radius:24px;
@@ -254,11 +256,12 @@ body{
 .cat-cell.on .cc-nm{ color:var(--accent);font-weight:700; }
 .amt-bar{ display:flex;align-items:center;gap:24px;padding:30px 50px;
   border-top:2px solid var(--line); position:relative; }
-.amt-bar .note-in{ flex:1;border:none;font-size:40px;outline:none;background:none; }
+.amt-bar .note-in{ flex:1;min-width:0;border:none;font-size:40px;outline:none;background:none; }
 .amt-bar .date-in{ font-size:36px;color:var(--accent);background:none;border:none;cursor:pointer; }
-.amt-bar .cur-btn{ flex:none;font-size:38px;font-weight:700;color:var(--accent);
+.amt-inline-slot{ flex:none;display:flex;align-items:center;gap:24px; }
+.amt-inline-slot .cur-btn{ flex:none;font-size:38px;font-weight:700;color:var(--accent);
   background:#eef0f4;border-radius:18px;padding:14px 22px;cursor:pointer; }
-.amt-bar .show-amt{ font-size:64px;font-weight:700;min-width:180px;text-align:right; }
+.amt-inline-slot .show-amt{ font-size:64px;font-weight:700;min-width:180px;text-align:right; }
 .amt-conv{ text-align:right; padding:6px 50px 0; font-size:32px; color:var(--sub); }
 .amt-conv:empty{ display:none; }
 .keypad{ display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--line);
@@ -273,8 +276,12 @@ body{
 /* ---------- AI 智能记账输入栏 ---------- */
 .ai-bar{ display:flex; gap:20px; padding:40px 50px 10px; align-items:center; }
 .ai-bar input{ flex:1; border:3px solid #e6ecff; background:#f6f9ff; border-radius:999px;
-  padding:30px 40px; font-size:38px; outline:none; }
+  min-width:0; padding:30px 40px; font-size:38px; outline:none; }
 .ai-bar input:focus{ border-color:var(--accent); }
+.ai-cur-slot{ flex:none;display:flex;align-items:center; }
+.ai-cur-slot .cur-btn{ width:116px;height:104px;flex:none;display:flex;align-items:center;justify-content:center;
+  font-size:34px;line-height:1;font-weight:700;color:var(--accent);
+  background:#eef0f4;border:3px solid #e6ecff;border-radius:22px;padding:0;cursor:pointer; }
 .ai-bar button{ flex:none; border:none; border-radius:999px; cursor:pointer;
   background:linear-gradient(135deg,#7c6cff,#3c7dff); color:#fff;
   font-size:40px; font-weight:600; padding:30px 46px; display:flex; align-items:center; gap:14px; }

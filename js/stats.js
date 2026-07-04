@@ -9,9 +9,9 @@ function renderStats(){
   if(!recs.length){
     main = '<div class="empty" style="padding:90px 0">本月暂无'+(statType==='expense'?'支出':'收入')+'数据</div>';
   } else {
-    const total = recs.reduce((s,r)=>s+toUnit(r.amount, r.currency),0);
+    const total = recs.reduce((s,r)=>s+toUnit(r.amount, r.currency, r.date.slice(0,10)),0);
     const byCat = {};
-    recs.forEach(r=>{ byCat[r.categoryId]=(byCat[r.categoryId]||0)+toUnit(r.amount, r.currency); });
+    recs.forEach(r=>{ byCat[r.categoryId]=(byCat[r.categoryId]||0)+toUnit(r.amount, r.currency, r.date.slice(0,10)); });
     const rows = Object.entries(byCat).map(([id,amt])=>({id, c:catById(statType,id), amt}))
                        .sort((a,b)=>b.amt-a.amt);
     let acc=0, segs=[];
@@ -47,7 +47,7 @@ function renderTrend(){
     months.push({y,m,label:(m+1)+'月',total:0}); }
   records.forEach(r=>{ if(r.type!==statType) return; const d=new Date(r.date);
     const mm=months.find(x=>x.y===d.getFullYear() && x.m===d.getMonth());
-    if(mm) mm.total += toUnit(r.amount, r.currency); });
+    if(mm) mm.total += toUnit(r.amount, r.currency, r.date.slice(0,10)); });
   const max=Math.max(1, ...months.map(x=>x.total)), us=unitSymbol();
   return `<div class="card trend"><div class="trend-title">近 6 月${statType==='expense'?'支出':'收入'}趋势</div>
     <div class="trend-bars">${months.map(x=>`

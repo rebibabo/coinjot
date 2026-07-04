@@ -158,6 +158,7 @@
         </div>
         <div class="ai-bar">
           <input id="aiInput" placeholder="✨ 一句话记账：今天打车35">
+          <div class="ai-cur-slot" id="aiCurSlot"></div>
           <button id="aiBtn">识别</button>
         </div>
         <div class="ai-hint">一句话记账：点输入框输入，想语音就用键盘上的 🎤；也可手动选分类</div>
@@ -165,8 +166,12 @@
         <div class="amt-bar">
           <input class="note-in" id="noteIn" placeholder="点此写备注…" maxlength="30">
           <div class="date-in" id="dateBtn">今天</div>
-          <div class="cur-btn" id="curBtn">¥</div>
-          <div class="show-amt" id="showAmt">0</div>
+          <div class="amt-inline-slot" id="amtInlineSlot">
+            <div class="cur-inline-slot" id="curInlineSlot">
+              <div class="cur-btn" id="curBtn">¥</div>
+            </div>
+            <div class="show-amt" id="showAmt">0</div>
+          </div>
         </div>
         <div class="amt-conv" id="amtConv"></div>
         <div class="keypad">

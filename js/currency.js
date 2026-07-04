@@ -1,8 +1,16 @@
 /* =================== 币种管理 + 每日汇率 ===================
    汇率来源（免费、以人民币为基准）：
    https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/cny.json
+   历史日期把 latest 换成 YYYY-MM-DD：
+   https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@2024-03-06/v1/currencies/cny.json
    返回 { date, cny:{ usd:0.14, ... } }，即「1 元 = 多少外币」。 */
-const RATE_URL = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/cny.json';
+function rateUrl(date){
+  return `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${date}/v1/currencies/cny.json`;
+}
+function rateFallbackUrl(date){
+  return `https://${date}.currency-api.pages.dev/v1/currencies/cny.json`;
+}
+const pendingRateDates = new Set();
 
 /* ---- 设置页：币种增删 ---- */
 function renderCurEditors(){
@@ -42,7 +50,7 @@ function addCurrency(code){
   currencies.push(curInfo(code));                 // 用目录或代码兜底生成 {code,symbol,name}
   saveCur(); renderCurEditors();
   if(window.updateCurBtn) updateCurBtn();
-  if(!rates || !rates.map || rates.map[code]==null) updateRates(true);   // 缺该币汇率则拉一次
+  if(!rates || !rates.map || rates.map[code]==null) updateRates(true);   // 缺今日汇率则拉一次
 }
 const curModal = document.getElementById('curModal');
 function renderCurOptions(){
@@ -70,8 +78,11 @@ curModal.onclick = e=>{ if(e.target===curModal) curModal.classList.remove('show'
 function renderRateWarn(){
   const el = document.getElementById('rateWarn'); if(!el) return;
   const miss = new Set();
-  records.forEach(r=>{ if(r.currency && r.currency!=='cny' && rateOf(r.currency)==null) miss.add(r.currency); });
-  if(statUnit!=='cny' && rateOf(statUnit)==null) miss.add(statUnit);
+  records.forEach(r=>{
+    const d = r.date ? r.date.slice(0,10) : today();
+    if(r.currency && r.currency!=='cny' && rateOf(r.currency, d)==null) miss.add(r.currency);
+    if(statUnit!=='cny' && rateOf(statUnit, d)==null) miss.add(statUnit);
+  });
   if(miss.size){
     el.style.display='';
     el.textContent = '⚠️ 部分外币暂无汇率，金额可能不准 · 点此更新汇率';
@@ -95,11 +106,7 @@ async function updateRates(force){
   const btn = document.getElementById('btnUpdateRate');
   if(force){ btn.style.pointerEvents='none'; document.getElementById('rateStatus').textContent='更新中…'; }
   try{
-    const res = await fetch(RATE_URL);
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data = await res.json();
-    rates = { date: today(), map: data.cny || {} };
-    localStorage.setItem(LS_RATES, JSON.stringify(rates));
+    await fetchRateForDate(today(), force);
     refreshRateStatus(); renderAll();
     return true;
   }catch(err){
@@ -108,6 +115,31 @@ async function updateRates(force){
     return false;
   }finally{
     if(force) btn.style.pointerEvents='';
+  }
+}
+
+async function fetchRateForDate(date, force){
+  const d = rateDate(date);
+  if(!force && rateDays[d] && rateDays[d].map) return true;
+  if(pendingRateDates.has(d)) return false;
+  pendingRateDates.add(d);
+  try{
+    let res = await fetch(rateUrl(d));
+    if(!res.ok) res = await fetch(rateFallbackUrl(d));
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    const bucket = { date: data.date || d, map: data.cny || {} };
+    rateDays[d] = bucket;
+    localStorage.setItem(LS_RATE_DAYS, JSON.stringify(rateDays));
+    if(d===today()){
+      rates = bucket;
+      localStorage.setItem(LS_RATES, JSON.stringify(rates));
+      refreshRateStatus();
+    }
+    renderAll();
+    return true;
+  }finally{
+    pendingRateDates.delete(d);
   }
 }
 
@@ -121,7 +153,7 @@ function openRateModal(){
   currencies.forEach(c=>{ if(c.code!=='cny') codes.push(c.code); });   // 先放你在用的
   RATE_COMMON.forEach(c=>{ if(!codes.includes(c)) codes.push(c); });   // 再补常用
   document.getElementById('rmList').innerHTML = codes.map(code=>{
-    const info = curInfo(code), r = rateOf(code), cny = r ? 1/r : null;
+    const info = curInfo(code), r = rateOf(code, today()), cny = r ? 1/r : null;
     const val = cny==null ? '汇率缺失' : `1 = ${cny.toFixed(4)} 元`;
     const used = currencies.some(c=>c.code===code) ? '<span class="rm-used">在用</span>' : '';
     return `<div class="rm-row"><div class="rm-nm">${info.symbol} ${info.name}

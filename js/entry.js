@@ -1,20 +1,26 @@
 /* =================== 记账弹层：收支切换 + 分类网格 + 数字键盘 =================== */
 const sheet=document.getElementById('sheet');
 const sheetInner=sheet.querySelector('.sheet-inner');
+const curBtn=document.getElementById('curBtn');
+const aiCurSlot=document.getElementById('aiCurSlot');
+const curInlineSlot=document.getElementById('curInlineSlot');
 const LS_LASTCUR='et_lastcur';
 let entryType='expense', entryCat=null, amtStr='0', entryDate=today(), entryCur='cny';
 let editingId=null;   // null=新增，否则=正在编辑的记录 id
+
+function placeCurBtn(inAiRow){
+  (inAiRow ? aiCurSlot : curInlineSlot).appendChild(curBtn);
+}
 
 /* 记住上次用过的币种（仍在配置列表里才采用，否则回退人民币） */
 function lastCur(){ const c=localStorage.getItem(LS_LASTCUR); return currencies.some(x=>x.code===c) ? c : 'cny'; }
 
 /* 币种按钮：点一下切到下一个已配置币种；只有 1 种时隐藏 */
 function updateCurBtn(){
-  const b=document.getElementById('curBtn');
-  b.textContent = curInfo(entryCur).symbol;
-  b.style.display = currencies.length>1 ? '' : 'none';
+  curBtn.textContent = curInfo(entryCur).symbol;
+  curBtn.style.display = currencies.length>1 ? '' : 'none';
 }
-document.getElementById('curBtn').onclick=()=>{
+curBtn.onclick=()=>{
   const idx = currencies.findIndex(c=>c.code===entryCur);
   entryCur = currencies[(idx+1) % currencies.length].code;
   localStorage.setItem(LS_LASTCUR, entryCur);   // 记住选择
@@ -42,6 +48,7 @@ document.getElementById('tabAdd').onclick=()=>openSheet();
 function openSheet(rec){
   editingId = rec ? rec.id : null;
   sheetInner.classList.toggle('editing', !!rec);
+  placeCurBtn(!rec);
   if(rec){
     entryDate = rec.date.slice(0,10);
     entryCur = rec.currency || 'cny';
@@ -129,7 +136,7 @@ function updateAmt(){
   document.getElementById('showAmt').textContent = amtStr;
   const conv = document.getElementById('amtConv');
   const v = Number(evalAmt());
-  conv.textContent = (v>0 && entryCur!==statUnit) ? '≈ ' + fmt(toUnit(v, entryCur), unitSymbol()) : '';
+  conv.textContent = (v>0 && entryCur!==statUnit) ? '≈ ' + fmt(toUnit(v, entryCur, entryDate), unitSymbol()) : '';
 }
 function updateDateBtn(){
   const b=document.getElementById('dateBtn');

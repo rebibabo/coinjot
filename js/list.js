@@ -5,13 +5,13 @@ function renderTodaySpend(){
   if(!el) return;
   const td = today();
   let sum = 0;
-  records.forEach(r=>{ if(r.type==='expense' && r.date.slice(0,10)===td) sum += toUnit(r.amount, r.currency); });
+  records.forEach(r=>{ if(r.type==='expense' && r.date.slice(0,10)===td) sum += toUnit(r.amount, r.currency, td); });
   el.textContent = '今天已花 ' + fmt(sum, unitSymbol());
 }
 function renderTop(){
   document.getElementById('monthLabel').textContent = `${viewYear}年${viewMonth+1}月`;
   let exp=0, inc=0;
-  monthRecords().forEach(r=>{ const v=toUnit(r.amount, r.currency);
+  monthRecords().forEach(r=>{ const v=toUnit(r.amount, r.currency, r.date.slice(0,10));
     r.type==='expense' ? exp+=v : inc+=v; });
   const sym = unitSymbol();
   const eE=document.getElementById('sumExpense'), eI=document.getElementById('sumIncome'), eB=document.getElementById('sumBalance');
@@ -49,7 +49,7 @@ function setCatFilter(type, catId){
 function renderFilterBar(recs){
   const bar = document.getElementById('filterBar');
   if(!isFiltered()){ bar.innerHTML=''; return; }
-  let exp=0, inc=0; recs.forEach(r=>{ const v=toUnit(r.amount, r.currency); r.type==='expense'?exp+=v:inc+=v; });
+  let exp=0, inc=0; recs.forEach(r=>{ const v=toUnit(r.amount, r.currency, r.date.slice(0,10)); r.type==='expense'?exp+=v:inc+=v; });
   const us=unitSymbol();
   const parts=[`共 ${recs.length} 笔`];
   if(exp) parts.push(`支 ${fmt(exp,us)}`);
@@ -134,7 +134,7 @@ function renderList(){
   let html = '';
   Object.keys(groups).sort().reverse().forEach(day=>{
     const list = groups[day];
-    let dExp=0, dInc=0; list.forEach(r=>{ const v=toUnit(r.amount, r.currency);
+    let dExp=0, dInc=0; list.forEach(r=>{ const v=toUnit(r.amount, r.currency, r.date.slice(0,10));
       r.type==='expense'?dExp+=v:dInc+=v; });
     const us=unitSymbol();
     const sub = [dExp?`支 ${fmt(dExp,us)}`:'', dInc?`收 ${fmt(dInc,us)}`:''].filter(Boolean).join('  ');
@@ -143,12 +143,18 @@ function renderList(){
     list.forEach(r=>{
       const c = catById(r.type, r.categoryId);
       const sym = curInfo(r.currency).symbol;
+      const day = r.date.slice(0,10);
+      const cny = (r.currency && r.currency!=='cny' && rateOf(r.currency, day))
+        ? `<div class="amt-cny">≈ ${fmt(toCNY(r.amount, r.currency, day), '¥')}</div>` : '';
       const time = r.date.slice(11,16);   // HH:MM
       html += `<div class="rec" data-id="${r.id}">
         <div class="ico" style="background:${c.color}22;color:${c.color}">${c.icon}</div>
         <div class="mid"><div class="cat">${c.name}</div>
           <div class="note">${time}${r.note?' · '+esc(r.note):''}</div></div>
-        <div class="amt ${r.type}">${r.type==='expense'?'-':'+'}${fmt(r.amount, sym)}</div>
+        <div class="amt-wrap">
+          <div class="amt ${r.type}">${r.type==='expense'?'-':'+'}${fmt(r.amount, sym)}</div>
+          ${cny}
+        </div>
       </div>`;
     });
     html += `</div></div>`;

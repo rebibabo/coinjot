@@ -1,6 +1,6 @@
 {
-  "versionCode": 7,
-  "versionName": "1.0.6",
+  "versionCode": 8,
+  "versionName": "1.0.7",
   "apkUrl": "https://gitee.com/yuan-zhongsheng/coinjot/releases/download/latest/coinjot.apk",
-  "notes": "语音记账更顺手\n- 新增开关「点 + 自动聚焦语音输入」（我的 → AI 智能记账里打开）\n- 开启后点 + 号直接弹键盘，点键盘上的 🎤 说话即可\n- 连续记账/隐私/自动聚焦等开关也纳入备份"
+  "notes": "多币种汇率更准确\n- 外币明细按记账当天历史汇率折算人民币\n- 汇率按日期本地缓存，月汇总/统计自动重算\n- 新增记账界面优化币种按钮位置与样式"
 }

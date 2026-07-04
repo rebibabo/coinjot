@@ -44,7 +44,7 @@ function fmt(n, symbol){
 }
 
 /* =================== 币种与汇率（基准 = 人民币 cny）=================== */
-const LS_CUR = 'et_currencies', LS_RATES = 'et_rates';
+const LS_CUR = 'et_currencies', LS_RATES = 'et_rates', LS_RATE_DAYS = 'et_rate_days';
 const CUR_CATALOG = {
   cny:{symbol:'¥',name:'人民币'},   usd:{symbol:'$',name:'美元'},
   eur:{symbol:'€',name:'欧元'},     gbp:{symbol:'£',name:'英镑'},
@@ -56,6 +56,7 @@ const CUR_CATALOG = {
 };
 let currencies = load(LS_CUR, null) || [{code:'cny',symbol:'¥',name:'人民币'}];
 let rates = load(LS_RATES, null);   // { date:'YYYY-MM-DD', map:{usd:0.14,...} }（cny 恒为 1）
+let rateDays = load(LS_RATE_DAYS, {}) || {};   // 按天缓存：{ 'YYYY-MM-DD': {date,map} }
 
 function saveCur(){ localStorage.setItem(LS_CUR, JSON.stringify(currencies)); }
 function curInfo(code){
@@ -64,17 +65,32 @@ function curInfo(code){
       || (CUR_CATALOG[code] ? {code, ...CUR_CATALOG[code]}
                             : {code, symbol:code.toUpperCase(), name:code.toUpperCase()});
 }
-function rateOf(code){ if(code==='cny'||!code) return 1; return (rates && rates.map) ? rates.map[code] : null; }
-/* 任意币种金额 → 人民币；缺汇率时退回原值 */
-function toCNY(amount, code){ const r = rateOf(code); return r ? amount/r : amount; }
+function rateDate(date){
+  const d = (date || today()).slice(0,10);
+  return d > today() ? today() : d;
+}
+function rateBucket(date){
+  const d = rateDate(date);
+  return rateDays[d] || (rates && rates.date===d ? rates : null);
+}
+function rateOf(code, date){
+  if(code==='cny'||!code) return 1;
+  const d = rateDate(date);
+  const bucket = rateBucket(d);
+  const r = bucket && bucket.map ? bucket.map[code] : null;
+  if(r==null && typeof fetchRateForDate==='function') fetchRateForDate(d).catch(()=>{});
+  return r;
+}
+/* 任意币种金额 → 人民币；按传入日期取当天汇率，缺汇率时退回原值 */
+function toCNY(amount, code, date){ const r = rateOf(code, date); return r ? amount/r : amount; }
 
 /* 统计单位（汇总用的币种）：默认人民币，可在设置里改 */
 const LS_UNIT = 'et_statunit';
 let statUnit = localStorage.getItem(LS_UNIT) || 'cny';
-function unitRate(){ return rateOf(statUnit) || 1; }       // 统计单位 / 1 元
+function unitRate(date){ return rateOf(statUnit, date) || 1; }       // 统计单位 / 1 元
 function unitSymbol(){ return curInfo(statUnit).symbol; }
-/* 任意币种金额 → 统计单位 */
-function toUnit(amount, code){ return toCNY(amount, code) * unitRate(); }
+/* 任意币种金额 → 统计单位；记录换算应传入记录日期 */
+function toUnit(amount, code, date){ return toCNY(amount, code, date) * unitRate(date); }
 function esc(s){ return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
 /* 按分类名关键词自动猜 emoji（命中即返回，否则 null，交给 AI 兜底） */
