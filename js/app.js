@@ -2,8 +2,8 @@
    最后加载：此时各模块的渲染/处理函数都已就绪。 */
 
 /* 月份切换：左右逐月，或点中间标签直接选任意年月 */
-document.getElementById('prevMonth').onclick=()=>{ if(--viewMonth<0){viewMonth=11;viewYear--;} renderAll(); };
-document.getElementById('nextMonth').onclick=()=>{ if(++viewMonth>11){viewMonth=0;viewYear++;} renderAll(); };
+document.getElementById('prevMonth').onclick=()=>{ if(--viewMonth<0){viewMonth=11;viewYear--;} renderAll(); scrollMainTo('top'); };
+document.getElementById('nextMonth').onclick=()=>{ if(++viewMonth>11){viewMonth=0;viewYear++;} renderAll(); scrollMainTo('top'); };
 /* 点中间标签 → 自定义年月面板（跨浏览器/WebView 稳定） */
 const mpick = document.getElementById('mpick');
 let mpYear = viewYear;
@@ -21,12 +21,31 @@ document.getElementById('mpNextY').onclick = ()=>{ mpYear++; renderMonthGrid(); 
 mpick.onclick = e=>{
   if(e.target===mpick){ mpick.classList.remove('show'); return; }
   const cell = e.target.closest('[data-m]');
-  if(cell){ viewYear = mpYear; viewMonth = +cell.dataset.m; mpick.classList.remove('show'); renderAll(); }
+  if(cell){ viewYear = mpYear; viewMonth = +cell.dataset.m; mpick.classList.remove('show'); renderAll(); scrollMainTo('top'); }
 };
 
 /* 底部 Tab 切换（顶部汇总栏只在明细/统计显示，"我的"页隐藏） */
 const topbar = document.querySelector('.topbar');
+const mainBody = document.querySelector('.body');
+const tabScrollTop = { list:0, stats:0, settings:0 };
+let currentTab = 'list';
+function scrollMainTo(pos){
+  if(!mainBody) return;
+  const apply = ()=>{ mainBody.scrollTop = pos==='bottom' ? mainBody.scrollHeight : 0; };
+  apply();
+  requestAnimationFrame(apply);
+}
+function saveTabScroll(){
+  if(currentTab && mainBody) tabScrollTop[currentTab] = mainBody.scrollTop;
+}
+function restoreTabScroll(name){
+  if(!mainBody) return;
+  const y = tabScrollTop[name] || 0;
+  mainBody.scrollTop = y;
+  requestAnimationFrame(()=>{ mainBody.scrollTop = y; });
+}
 function goTab(name){
+  saveTabScroll();
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
   const tab = document.querySelector(`.tab[data-tab="${name}"]`);
   if(tab) tab.classList.add('on');
@@ -35,6 +54,8 @@ function goTab(name){
   topbar.style.display = name==='settings' ? 'none' : '';
   setStatusBar(name);
   if(name!=='settings') renderTop();   // 顶栏可见后重算金额字号（避免隐藏时量不到宽）
+  currentTab = name;
+  restoreTabScroll(name);
 }
 document.querySelectorAll('.tab[data-tab]').forEach(t=> t.onclick=()=>goTab(t.dataset.tab));
 

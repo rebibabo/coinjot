@@ -1,6 +1,6 @@
 {
-  "versionCode": 8,
-  "versionName": "1.0.7",
+  "versionCode": 9,
+  "versionName": "1.0.8",
   "apkUrl": "https://gitee.com/yuan-zhongsheng/coinjot/releases/download/latest/coinjot.apk",
-  "notes": "多币种汇率更准确\n- 外币明细按记账当天历史汇率折算人民币\n- 汇率按日期本地缓存，月汇总/统计自动重算\n- 新增记账界面优化币种按钮位置与样式"
+  "notes": "统计页交互更顺手\n- 环形图和图例支持多选、反选与清除选择\n- 7 月趋势支持点击月份切换，并优化跨年窗口位置\n- 底部导航选中态更明显，切换 Tab 会记住滚动位置\n- 检查更新时增加即时反馈"
 }

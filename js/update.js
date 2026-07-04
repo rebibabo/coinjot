@@ -4,7 +4,7 @@
             2) 改仓库根 version.json（同样的 code/name + 新的 notes）
             3) 把新 APK 传到 Gitee Release，version.json 传到 Gitee 仓库 raw 路径。 */
 
-const APP_VERSION = { code: 8, name: '1.0.7' };   // ← 每次发版同步这里
+const APP_VERSION = { code: 9, name: '1.0.8' };   // ← 每次发版同步这里
 
 /* ↓↓↓ 你的 Gitee 用户名（仓库名 coinjot、默认分支 main） ↓↓↓ */
 const GITEE_USER = 'yuan-zhongsheng';
@@ -92,7 +92,18 @@ _updLater.onclick = ()=>{
 const _aboutVer = document.getElementById('aboutVer');
 if(_aboutVer) _aboutVer.textContent = 'v' + APP_VERSION.name;
 const _btnCheck = document.getElementById('btnCheckUpd');
-if(_btnCheck) _btnCheck.onclick = ()=> checkUpdate(true);
+const _btnCheckArrow = _btnCheck ? _btnCheck.querySelector('.arrow') : null;
+function setCheckBtnLoading(on){
+  if(!_btnCheck) return;
+  _btnCheck.style.pointerEvents = on ? 'none' : '';
+  _btnCheck.style.opacity = on ? '.65' : '';
+  if(_btnCheckArrow) _btnCheckArrow.textContent = on ? '检查中…' : '›';
+}
+if(_btnCheck) _btnCheck.onclick = async ()=>{
+  setCheckBtnLoading(true);
+  try{ await checkUpdate(true); }
+  finally{ setCheckBtnLoading(false); }
+};
 
 /* 启动后延迟静默检查一次（此时 app.js 已加载，showToast 可用） */
 setTimeout(()=> checkUpdate(false), 1500);
