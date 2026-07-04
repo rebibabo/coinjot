@@ -192,6 +192,7 @@ function commitEntry(){
   // 跳到该笔所在月份
   const [jy,jm] = entryDate.split('-').map(Number);
   viewYear=jy; viewMonth=jm-1;
+  clearStatSelection();
   renderAll();
   if(!editingId && contMode){          // 连续记账：清空金额/备注，保留分类/日期/币种，弹层不关
     amtStr='0'; document.getElementById('noteIn').value=''; updateAmt();

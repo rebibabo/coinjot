@@ -2,8 +2,8 @@
    最后加载：此时各模块的渲染/处理函数都已就绪。 */
 
 /* 月份切换：左右逐月，或点中间标签直接选任意年月 */
-document.getElementById('prevMonth').onclick=()=>{ if(--viewMonth<0){viewMonth=11;viewYear--;} renderAll(); scrollMainTo('top'); };
-document.getElementById('nextMonth').onclick=()=>{ if(++viewMonth>11){viewMonth=0;viewYear++;} renderAll(); scrollMainTo('top'); };
+document.getElementById('prevMonth').onclick=()=>{ if(--viewMonth<0){viewMonth=11;viewYear--;} clearStatSelection(); renderAll(); scrollMainTo('top'); };
+document.getElementById('nextMonth').onclick=()=>{ if(++viewMonth>11){viewMonth=0;viewYear++;} clearStatSelection(); renderAll(); scrollMainTo('top'); };
 /* 点中间标签 → 自定义年月面板（跨浏览器/WebView 稳定） */
 const mpick = document.getElementById('mpick');
 let mpYear = viewYear;
@@ -21,7 +21,7 @@ document.getElementById('mpNextY').onclick = ()=>{ mpYear++; renderMonthGrid(); 
 mpick.onclick = e=>{
   if(e.target===mpick){ mpick.classList.remove('show'); return; }
   const cell = e.target.closest('[data-m]');
-  if(cell){ viewYear = mpYear; viewMonth = +cell.dataset.m; mpick.classList.remove('show'); renderAll(); scrollMainTo('top'); }
+  if(cell){ viewYear = mpYear; viewMonth = +cell.dataset.m; clearStatSelection(); mpick.classList.remove('show'); renderAll(); scrollMainTo('top'); }
 };
 
 /* 底部 Tab 切换（顶部汇总栏只在明细/统计显示，"我的"页隐藏） */
@@ -66,7 +66,7 @@ function openHelp(){
   const body = helpSheet.querySelector('.help-body'); if(body) body.scrollTop = 0;
   helpSheet.classList.add('show');
   const SB = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
-  if(SB){ SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{}); SB.setStyle({style:'LIGHT'}).catch(()=>{}); }
+  if(SB){ SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{}); SB.setStyle({style:'DARK'}).catch(()=>{}); }
 }
 function closeHelp(){
   helpSheet.classList.remove('show');
@@ -108,7 +108,7 @@ function setStatusBar(name){
   if(!SB) return;
   SB.setOverlaysWebView({ overlay:false }).catch(()=>{});
   if(name==='settings'){ SB.setBackgroundColor({color:'#f4f5f7'}).catch(()=>{}); SB.setStyle({style:'DARK'}).catch(()=>{}); }
-  else { SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{}); SB.setStyle({style:'LIGHT'}).catch(()=>{}); }
+  else { SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{}); SB.setStyle({style:'DARK'}).catch(()=>{}); }
 }
 setStatusBar('list');
 

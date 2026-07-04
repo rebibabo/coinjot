@@ -3,6 +3,14 @@ let statType = 'expense';
 let statPickedCats = new Set();
 const STAT_COLORS = ['#0072B2','#D55E00','#009E73','#CC79A7','#E69F00','#6A3D9A',
   '#56B4E9','#E64B35','#4DBBD5','#00A087','#3C5488','#F39B7F'];
+const PIE_CENTER = 120;
+const PIE_OUTER = 110;
+const PIE_INNER = 68;
+const PIE_LIFT = 14;
+
+function clearStatSelection(){
+  statPickedCats.clear();
+}
 
 function applyStatColors(rows){
   let i = 0;
@@ -18,25 +26,22 @@ function polar(cx, cy, r, deg){
 }
 function donutSlicePath(start, end, outer, inner){
   if(end - start >= 359.99) end = start + 359.99;
-  const c = 120, large = end - start > 180 ? 1 : 0;
-  const o1 = polar(c,c,outer,start), o2 = polar(c,c,outer,end);
-  const i1 = polar(c,c,inner,start), i2 = polar(c,c,inner,end);
+  const large = end - start > 180 ? 1 : 0;
+  const o1 = polar(PIE_CENTER,PIE_CENTER,outer,start), o2 = polar(PIE_CENTER,PIE_CENTER,outer,end);
+  const i1 = polar(PIE_CENTER,PIE_CENTER,inner,start), i2 = polar(PIE_CENTER,PIE_CENTER,inner,end);
   return `M ${o1.x} ${o1.y} A ${outer} ${outer} 0 ${large} 1 ${o2.x} ${o2.y}
     L ${i2.x} ${i2.y} A ${inner} ${inner} 0 ${large} 0 ${i1.x} ${i1.y} Z`;
 }
+
 function renderPie(rows, total, us){
   let acc = 0;
   const slices = rows.map(r=>{
     const start = acc / total * 360, end = (acc + r.amt) / total * 360;
     acc += r.amt;
-    const mid = (start + end) / 2;
     const picked = statPickedCats.has(r.id);
-    const lift = picked && rows.length > 1;
-    const dx = lift ? Math.cos((mid - 90) * Math.PI / 180) * 10 : 0;
-    const dy = lift ? Math.sin((mid - 90) * Math.PI / 180) * 10 : 0;
+    const offset = picked ? PIE_LIFT : 0;
     return `<path class="pie-slice${picked?' picked':''}" data-cat="${r.id}"
-      d="${donutSlicePath(start,end,110,68)}" fill="${r.color}"
-      style="transform:translate(${dx.toFixed(2)}px,${dy.toFixed(2)}px) scale(${lift?'1.035':'1'})"></path>`;
+      d="${donutSlicePath(start,end,PIE_OUTER+offset,PIE_INNER+offset)}" fill="${r.color}"></path>`;
   }).join('');
   const pickedRows = rows.filter(r=>statPickedCats.has(r.id));
   const pickedTotal = pickedRows.reduce((s,r)=>s+r.amt,0);
@@ -118,16 +123,16 @@ function renderTrend(){
 
 document.querySelectorAll('.stat-switch button').forEach(b=>{
   b.onclick=()=>{ document.querySelectorAll('.stat-switch button').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on'); statType=b.dataset.stat; statPickedCats.clear(); renderStats(); };
+    b.classList.add('on'); statType=b.dataset.stat; clearStatSelection(); renderStats(); };
 });
 
 /* 点分类（图例或柱条）→ 跳到明细并按该分类筛选 */
 document.getElementById('statsContent').addEventListener('click', e=>{
-  if(e.target.closest('[data-clear-stat]')){ statPickedCats.clear(); renderStats(); return; }
+  if(e.target.closest('[data-clear-stat]')){ clearStatSelection(); renderStats(); return; }
   const month = e.target.closest('[data-month]');
   if(month){
     const [y,m] = month.dataset.month.split('-').map(Number);
-    viewYear = y; viewMonth = m; statPickedCats.clear(); renderAll(); scrollMainTo('bottom'); return;
+    viewYear = y; viewMonth = m; clearStatSelection(); renderAll(); scrollMainTo('bottom'); return;
   }
   const pick = e.target.closest('.pie-slice, .legend .row');
   if(pick){

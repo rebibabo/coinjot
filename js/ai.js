@@ -213,6 +213,7 @@ function saveMultiple(arr){
   if(!n){ showAlert('没识别出有效金额。\n把金额说清楚试试，例如「打车 35」「午饭 25」。', '没记成'); return; }
   save();
   const [jy,jm] = entryDate.split('-').map(Number); viewYear=jy; viewMonth=jm-1;
+  clearStatSelection();
   aiInput.value=''; renderAll(); closeSheet();
   showToast(`已记 ${n} 笔`);
 }
