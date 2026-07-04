@@ -61,6 +61,26 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Set Android navigation bar white
+        run: |
+          cat > android/app/src/main/java/com/rebibabo/coinjot/MainActivity.java <<'EOF'
+          package com.rebibabo.coinjot;
+
+          import android.graphics.Color;
+          import android.os.Bundle;
+          import android.view.Window;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  Window window = getWindow();
+                  window.setNavigationBarColor(Color.WHITE);
+              }
+          }
+          EOF
+
       - name: Lock portrait orientation
         run: sed -i '/android:name=".MainActivity"/a\            android:screenOrientation="portrait"' android/app/src/main/AndroidManifest.xml
 

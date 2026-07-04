@@ -1,6 +1,6 @@
 {
-  "versionCode": 9,
-  "versionName": "1.0.8",
+  "versionCode": 10,
+  "versionName": "1.0.9",
   "apkUrl": "https://gitee.com/yuan-zhongsheng/coinjot/releases/download/latest/coinjot.apk",
-  "notes": "统计页交互更顺手\n- 环形图和图例支持多选、反选与清除选择\n- 7 月趋势支持点击月份切换，并优化跨年窗口位置\n- 底部导航选中态更明显，切换 Tab 会记住滚动位置\n- 检查更新时增加即时反馈"
+  "notes": "底部导航显示更清爽\n- 底部导航改为单色线框图标，选中后蓝色填充\n- 优化手机系统导航栏背景，减少底部黑边割裂感\n- 保持网页端与 App 端底部样式一致"
 }

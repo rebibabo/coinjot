@@ -139,10 +139,33 @@
 
     <!-- 底部 Tab -->
     <div class="tabbar">
-      <div class="tab on" data-tab="list"><div class="ti">📋</div>明细</div>
-      <div class="tab fab" id="tabAdd"><div class="ti">+</div></div>
-      <div class="tab" data-tab="stats"><div class="ti">📊</div>统计</div>
-      <div class="tab" data-tab="settings"><div class="ti">⚙️</div>我的</div>
+      <div class="tab on" data-tab="list"><div class="ti">
+        <svg class="tab-ico" viewBox="0 0 48 48" aria-hidden="true">
+          <rect class="tab-fill" x="11" y="10" width="26" height="31" rx="5"></rect>
+          <rect class="tab-line" x="11" y="10" width="26" height="31" rx="5"></rect>
+          <path class="tab-line" d="M18 10V7h12v3"></path>
+          <path class="tab-line" d="M17 20h14M17 27h14M17 34h10"></path>
+        </svg>
+      </div>明细</div>
+      <div class="tab fab" id="tabAdd"><div class="ti plus-ico"></div></div>
+      <div class="tab" data-tab="stats"><div class="ti">
+        <svg class="tab-ico" viewBox="0 0 48 48" aria-hidden="true">
+          <rect class="tab-fill" x="9" y="25" width="7" height="14" rx="2"></rect>
+          <rect class="tab-fill" x="21" y="15" width="7" height="24" rx="2"></rect>
+          <rect class="tab-fill" x="33" y="9" width="7" height="30" rx="2"></rect>
+          <rect class="tab-line" x="9" y="25" width="7" height="14" rx="2"></rect>
+          <rect class="tab-line" x="21" y="15" width="7" height="24" rx="2"></rect>
+          <rect class="tab-line" x="33" y="9" width="7" height="30" rx="2"></rect>
+        </svg>
+      </div>统计</div>
+      <div class="tab" data-tab="settings"><div class="ti">
+        <svg class="tab-ico" viewBox="0 0 48 48" aria-hidden="true">
+          <circle class="tab-fill" cx="24" cy="16" r="8"></circle>
+          <path class="tab-fill" d="M10 40c2.4-9 9-14 14-14s11.6 5 14 14"></path>
+          <circle class="tab-line" cx="24" cy="16" r="8"></circle>
+          <path class="tab-line" d="M10 40c2.4-9 9-14 14-14s11.6 5 14 14"></path>
+        </svg>
+      </div>我的</div>
     </div>
 
     <!-- 记账弹层 -->

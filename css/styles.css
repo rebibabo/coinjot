@@ -222,15 +222,23 @@ body{
 .tabbar{ flex:none; display:flex; background:var(--card);
   border-top:2px solid var(--line); height:210px; padding:0; }
 .tab{ flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;
-  color:var(--sub);font-size:34px;cursor:pointer;justify-content:center;padding-bottom:36px; }
-.tab .ti{ font-size:56px;line-height:1; }
+  color:var(--sub);font-size:34px;cursor:pointer;justify-content:center;
+  padding-bottom:36px; }
+.tab .ti{ width:64px;height:64px;line-height:1;display:flex;align-items:center;justify-content:center; }
+.tab-ico{ width:62px;height:62px;display:block; }
+.tab-line{ fill:none;stroke:currentColor;stroke-width:3.8;stroke-linecap:round;stroke-linejoin:round; }
+.tab-fill{ fill:currentColor;opacity:0;transition:opacity .16s; }
 .tab.on{ color:var(--accent); }
-.tab.on:not(.fab){ background:#e8f0ff; }
+.tab.on .tab-fill{ opacity:1; }
 .tab.fab{ position:relative; }
 .tab.fab .ti{ width:130px;height:130px;border-radius:50%;margin-top:-70px;
   background:linear-gradient(135deg,#3c7dff,#5b6bff);color:#fff;
-  display:flex;align-items:center;justify-content:center;font-size:80px;font-weight:300;
   box-shadow:0 12px 30px rgba(60,125,255,.45); }
+.plus-ico{ position:relative; }
+.plus-ico::before,
+.plus-ico::after{ content:'';position:absolute;left:50%;top:50%;
+  width:58px;height:6px;border-radius:999px;background:#fff;transform:translate(-50%,-50%); }
+.plus-ico::after{ transform:translate(-50%,-50%) rotate(90deg); }
 
 /* ---------- 记账输入弹层 ---------- */
 .sheet{ position:absolute;inset:0;background:rgba(0,0,0,.35);z-index:50;
