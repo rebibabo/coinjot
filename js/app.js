@@ -166,21 +166,27 @@ function fitStage(){
     stage.style.transformOrigin = 'top left';
     stage.style.left = '0'; stage.style.top = '0';
     stage.style.transform = `scale(${s})`;
-    updateSafeTop(s);
+    updateSettingsPadding();
   }
   stage.style.visibility = 'visible';   // 缩放就位后再显示，消除开屏闪烁
 }
 /* 从原生层获取状态栏高度 → 转设计画布像素，适配刘海/水滴/普通屏 */
-function updateSafeTop(s){
-  s = s || window.innerWidth / 1200;
+function readStatusBarPx(){
   let px = window.__statusBarHeight || 0;
   if(!px && window.visualViewport) px = window.visualViewport.offsetTop;
-  if(!px) px = 24; // 兜底：Android 典型状态栏
-  document.documentElement.style.setProperty('--safe-top', Math.round(px / s) + 'px');
+  if(!px) px = 24;
+  return px;
 }
-// 原生 __statusBarHeight 可能在 fitStage 之后才注入，延迟重算
-setTimeout(()=>{ if(window.__statusBarHeight) updateSafeTop(); }, 500);
-setTimeout(()=>{ if(window.__statusBarHeight) updateSafeTop(); }, 1500);
+function updateSettingsPadding(){
+  const page = document.getElementById('page-settings');
+  if(!page || !page.classList.contains('active')) return;
+  const s = window.innerWidth / 1200;
+  page.style.paddingTop = Math.round(readStatusBarPx() / s + 40) + 'px';
+}
+// 原生 __statusBarHeight 可能在首帧之后才注入，轮询更新
+setTimeout(updateSettingsPadding, 300);
+setTimeout(updateSettingsPadding, 800);
+setTimeout(updateSettingsPadding, 2000);
 window.addEventListener('resize', fitStage);
 window.addEventListener('orientationchange', ()=>{ baseH = 0; setTimeout(fitStage, 100); });
 

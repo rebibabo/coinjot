@@ -108,12 +108,18 @@ jobs:
                       window.setNavigationBarContrastEnforced(false);
                   }
 
-                  // Pass real status bar height to WebView for safe-area CSS
+                  // Pass real status bar height to WebView (post ensures WebView is loaded)
                   int statusBarH = 0;
                   int id = getResources().getIdentifier("status_bar_height", "dimen", "android");
                   if (id > 0) statusBarH = getResources().getDimensionPixelSize(id);
-                  bridge.getWebView().evaluateJavascript(
-                      "window.__statusBarHeight=" + statusBarH + ";", null);
+                  final int sbH = statusBarH;
+                  android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+                  mainHandler.postDelayed(() -> {
+                      if (bridge != null && bridge.getWebView() != null) {
+                          bridge.getWebView().evaluateJavascript(
+                              "window.__statusBarHeight=" + sbH + ";if(typeof updateSettingsPadding==='function')updateSettingsPadding();", null);
+                      }
+                  }, 800);
               }
           }
           EOF
