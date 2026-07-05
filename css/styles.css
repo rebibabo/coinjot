@@ -34,8 +34,8 @@ body{
 }
 
 /* ---------- 顶部汇总卡 ---------- */
-.topbar{ padding:var(--topbar-pt, 80px) 60px 36px; color:#fff; flex:none; background:#3c7dff; position:relative; }
-.eye-toggle{ position:absolute; top:calc(36px + var(--safe-top-px, 0px)); right:50px; font-size:44px; line-height:1; cursor:pointer; opacity:.95; }
+.topbar{ padding:var(--topbar-pt, 50px) 60px 36px; color:#fff; flex:none; background:#3c7dff; position:relative; }
+.eye-toggle{ position:absolute; top:var(--topbar-pt, 50px); right:50px; font-size:44px; line-height:1; cursor:pointer; opacity:.95; }
 .month-row{ display:flex; align-items:center; gap:24px; font-size:46px; font-weight:600; position:relative; }
 .month-row #monthLabel{ cursor:pointer; }
 .month-row .nav{ width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.18);
@@ -48,13 +48,13 @@ body{
 /* ---------- 主体滚动区 ---------- */
 .body{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .page{ display:none; padding:40px 50px 60px; }
-#page-settings{ padding-top:calc(40px + var(--safe-top-px, 60px)); } /* 兜底值，JS 会按真实状态栏高度覆盖 */
+#page-settings{ padding-top:calc(70px + var(--safe-top-px, 60px)); } /* 兜底值，JS 会按真实状态栏高度覆盖 */
 .page.active{ display:block; }
 
 /* ---------- 通用 ---------- */
 .card{ background:var(--card); border-radius:36px; box-shadow:var(--shadow); }
 .empty{ text-align:center; color:var(--sub); font-size:40px; padding:160px 0; }
-.page-title{ font-size:56px;font-weight:800;margin:0 6px 44px; }
+.page-title{ font-size:64px;font-weight:800;margin:0 6px 60px; }
 .sect-title{ font-size:50px;font-weight:800;margin:20px 6px 30px; display:flex;align-items:center;gap:18px; }
 .sect-help{ width:46px;height:46px;flex:none;border-radius:50%;background:#3c7dff;color:#fff;
   font-size:30px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;

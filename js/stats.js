@@ -203,7 +203,7 @@ function renderDailyTrend(){
         const delay = (offset + idx) * 8;
         return `<div class="tb" data-day="${x.date}" data-total="${x.total}" style="--bar-h:${h}px;--delay:${delay}ms">
           <div class="tb-plot">
-            <div class="tb-val">${x.total ? Math.round(x.total) : ''}</div>
+            <div class="tb-val">${x.total ? (privacyOn ? '••••' : Math.round(x.total)) : ''}</div>
             <div class="tb-bar" style="height:${h}px;background:${dayBarColor(scaledDayRatio(x.total, maxTotal))}"></div>
           </div>
           <div class="tb-lbl">${x.d}</div></div>`;
@@ -240,7 +240,7 @@ function renderTrend(){
     <div class="trend-bars">${months.map((x, idx)=>`
       <div class="tb${x.y===viewYear&&x.m===viewMonth?' on':''}" data-month="${x.y}-${x.m}" style="--delay:${idx * 42}ms">
         <div class="tb-plot" style="--bar-h:${Math.round(x.total/max*220)+3}px">
-          <div class="tb-val">${x.total ? Math.round(x.total) : ''}</div>
+          <div class="tb-val">${x.total ? (privacyOn ? '••••' : Math.round(x.total)) : ''}</div>
           <div class="tb-bar" style="height:${Math.round(x.total/max*220)+3}px;
             background:${x.y===viewYear&&x.m===viewMonth?'var(--accent)':'#c7d2fe'}"></div>
         </div>

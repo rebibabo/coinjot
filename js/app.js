@@ -183,7 +183,7 @@ function applySafeAreaVars(s){
   const root = document.documentElement;
   root.style.setProperty('--safe-top-px', topDp + 'px');
   root.style.setProperty('--safe-bot-px', botDp + 'px');
-  root.style.setProperty('--topbar-pt', (80 + topDp) + 'px');
+  root.style.setProperty('--topbar-pt', (50 + topDp) + 'px');
   root.style.setProperty('--help-top-pt', (46 + topDp) + 'px');
 }
 
@@ -204,7 +204,7 @@ function fitStage(){
     const root = document.documentElement;
     root.style.setProperty('--safe-top-px', '0px');
     root.style.setProperty('--safe-bot-px', '0px');
-    root.style.setProperty('--topbar-pt', '80px');
+    root.style.setProperty('--topbar-pt', '50px');
     root.style.setProperty('--help-top-pt', '46px');
   } else {                             // 竖屏（手机）→ 按宽铺满，高度自适应
     const s = W/1200;
@@ -223,7 +223,7 @@ function updateSettingsPadding(){
   const page = document.getElementById('page-settings');
   if(!page || !page.classList.contains('active')) return;
   const s = window.innerWidth / 1200;
-  page.style.paddingTop = Math.round(readTopSafePx() / s + 40) + 'px';
+  page.style.paddingTop = Math.round(readTopSafePx() / s + 70) + 'px';
 }
 // 安全区变量可能在首帧 / 原生注入之后才到位，轮询补刀
 setTimeout(()=>{ applySafeAreaVars(window.innerWidth/1200); updateSettingsPadding(); }, 300);
