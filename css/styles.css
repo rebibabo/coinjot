@@ -162,9 +162,9 @@ body{
   display:flex; align-items:center; justify-content:center; }
 .pie-svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
 .pie-slice{ cursor:pointer; transition:filter .18s ease; }
-.pie-panel.animating .pie-slice{ transform-origin:120px 120px; animation:pieSliceIn .46s cubic-bezier(.2,.82,.2,1) both;
+.pie-panel.animating .pie-slice{ transform-origin:120px 120px; animation:pieSliceIn .55s cubic-bezier(.34,1.56,.64,1) both;
   animation-delay:var(--delay,0ms); }
-.pie-panel.animating .pie-total{ animation:pieCenterIn .34s ease both; animation-delay:120ms; }
+.pie-panel.animating .pie-total{ animation:pieCenterIn .42s cubic-bezier(.34,1.56,.64,1) both; animation-delay:60ms; }
 /* 中心白底盘：按饼图比例，确保数字落在白底上不被扇区盖住 */
 .pie-total{ width:62%; height:62%; border-radius:50%; background:var(--card);
   display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;
@@ -176,7 +176,7 @@ body{
   border-radius:999px;padding:12px 30px;font-size:30px;cursor:pointer; }
 .legend{ flex:1; }
 .legend .row{ display:flex;align-items:center;gap:20px;padding:16px 18px;margin:15px 0;border-radius:24px;cursor:pointer; }
-.pie-panel.animating .legend .row{ animation:statRowIn .34s ease both; animation-delay:calc(var(--delay,0ms) + 120ms); }
+.pie-panel.animating .legend .row{ animation:statRowIn .38s cubic-bezier(.34,1.56,.64,1) both; animation-delay:calc(var(--delay,0ms) + 80ms); }
 .legend .row.picked{ background:#f1f2f6; }
 .legend .row.picked .nm{ font-weight:700; }
 .legend .row.picked .dot{ transform:scale(1.12); }
@@ -252,12 +252,13 @@ body{
 .bars-panel.animating .bar-fill{ animation:barFillIn .52s cubic-bezier(.2,.82,.2,1) both;
   animation-delay:calc(var(--delay,0ms) + 80ms); }
 @keyframes pieSliceIn{
-  from{ opacity:0; transform:scale(.88); }
-  to{ opacity:1; transform:scale(1); }
+  from{ opacity:0; transform:rotate(-12deg) scale(.78); }
+  to{ opacity:1; transform:rotate(0deg) scale(1); }
 }
 @keyframes pieCenterIn{
-  from{ opacity:0; transform:scale(.94); }
-  to{ opacity:1; transform:scale(1); }
+  from{ opacity:0; transform:scale(.55); }
+  70%{ opacity:1; transform:scale(1.04); }
+  to{ transform:scale(1); }
 }
 @keyframes statRowIn{
   from{ opacity:0; transform:translateY(12px); }
