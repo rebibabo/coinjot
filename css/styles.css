@@ -48,7 +48,7 @@ body{
 /* ---------- 主体滚动区 ---------- */
 .body{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .page{ display:none; padding:40px 50px 60px; }
-#page-settings{ padding-top:100px; }
+#page-settings{ padding-top:150px; }
 .page.active{ display:block; }
 
 /* ---------- 通用 ---------- */
@@ -468,6 +468,10 @@ body{
   display:flex; align-items:center; justify-content:space-between; }
 .backup-item.on{ border-color:var(--accent); background:#eaf1ff; color:var(--accent); }
 .backup-item .sub{ font-size:28px; font-weight:400; color:var(--sub); flex:none; margin-left:12px; }
+.bk-del{ flex:none; margin-left:16px; font-size:30px; color:var(--sub); line-height:1;
+  width:52px;height:52px;display:flex;align-items:center;justify-content:center;
+  border-radius:50%; background:#f1f2f6; cursor:pointer; }
+.bk-del:hover{ background:#ff5a5f; color:#fff; }
 .ce-row{ display:flex; align-items:center; gap:28px; margin-bottom:30px; }
 .ce-icon{ width:140px;height:140px;flex:none;border-radius:34px;background:#f1f2f6;
   display:flex;align-items:center;justify-content:center;font-size:76px; }

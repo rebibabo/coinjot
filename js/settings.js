@@ -252,6 +252,7 @@ function renderBackupList(){
     <button class="backup-item ${i===selectedBackupIndex?'on':''}" data-backup-i="${i}" type="button">
       <span>${b.label || backupLabel(b.time)}</span>
       <span class="sub">${i+1}/${backupChoices.length}${i===selectedBackupIndex?' · 当前选择':''}</span>
+      <span class="bk-del" data-backup-del="${i}" title="删除此备份">✕</span>
     </button>`).join('');
 }
 async function restoreBackupAt(index){
@@ -275,6 +276,25 @@ async function restoreBackupAt(index){
   document.getElementById('backupModal').classList.remove('show');
   showAlert('已从本机备份恢复 ✓');
 }
+async function deleteBackupAt(index){
+  const FS = nativeFS();
+  const pick = backupChoices[index];
+  if(!FS || !pick) return;
+  if(!(await showConfirm('确定删除此备份？\n'+(pick.label || pick.name)+'\n\n删除后不可恢复。'))) return;
+  try{
+    await FS.deleteFile({ directory:'EXTERNAL', path:BK_DIR+'/'+pick.name });
+    const meta = loadBackupMeta();
+    if(meta){
+      meta.items = meta.items.filter(x=>x.name!==pick.name);
+      if(meta.pointer >= meta.items.length) meta.pointer = meta.items.length - 1;
+      saveBackupMeta(meta);
+    }
+    backupChoices = backupChoices.filter((_,i)=>i!==index);
+    if(selectedBackupIndex >= backupChoices.length) selectedBackupIndex = backupChoices.length - 1;
+    renderBackupList();
+    renderLastBackup();
+  }catch(e){ showAlert('删除失败：'+(e.message||e)); }
+}
 async function restoreLocal(){
   const FS = nativeFS();
   if(!FS){ showAlert('本机恢复仅 App 内可用；浏览器请用「从文件导入备份」'); return; }
@@ -291,6 +311,8 @@ document.getElementById('btnBackupLocal').onclick = backupLocal;
 document.getElementById('btnRestoreLocal').onclick = restoreLocal;
 document.getElementById('backupCancel').onclick = ()=>document.getElementById('backupModal').classList.remove('show');
 document.getElementById('backupList').onclick = e=>{
+  const del = e.target.closest('[data-backup-del]');
+  if(del){ e.stopPropagation(); deleteBackupAt(Number(del.dataset.backupDel)); return; }
   const el = e.target.closest('[data-backup-i]'); if(!el) return;
   selectedBackupIndex = Number(el.dataset.backupI);
   renderBackupList();
