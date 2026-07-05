@@ -53,6 +53,7 @@ body{
 /* ---------- 通用 ---------- */
 .card{ background:var(--card); border-radius:36px; box-shadow:var(--shadow); }
 .empty{ text-align:center; color:var(--sub); font-size:40px; padding:160px 0; }
+.page-title{ font-size:56px;font-weight:800;margin:0 6px 30px; }
 .sect-title{ font-size:50px;font-weight:800;margin:20px 6px 30px; display:flex;align-items:center;gap:18px; }
 .sect-help{ width:46px;height:46px;flex:none;border-radius:50%;background:#3c7dff;color:#fff;
   font-size:30px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;
@@ -459,8 +460,8 @@ body{
 .modal-card{ background:var(--card); border-radius:48px; width:88%; padding:54px;
   box-shadow:var(--shadow); }
 .modal-title{ font-size:52px; font-weight:700; text-align:center; margin-bottom:44px; }
-.backup-card{ height:150vh; max-height:150vh; display:flex; flex-direction:column; }
-.backup-list{ flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column; gap:18px; padding:4px 0; }
+.backup-card{ max-height:80vh; display:flex; flex-direction:column; }
+.backup-list{ overflow:auto; display:flex; flex-direction:column; gap:18px; padding:4px 0; }
 .backup-item{ border:3px solid var(--line); border-radius:30px; background:#fff; color:var(--ink);
   padding:24px 28px; font-size:36px; font-weight:700; line-height:1.25; text-align:left;
   display:flex; align-items:center; justify-content:space-between; }
