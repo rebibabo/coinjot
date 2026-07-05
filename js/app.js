@@ -109,13 +109,18 @@ if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App)
 /* 桌面/浏览器预览：Esc 等效返回键，方便测试 */
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') handleBack(); });
 
-/* App 内：状态栏不覆盖网页，颜色始终跟随 topbar 蓝色（避开刘海） */
+/* App 内：状态栏颜色跟随 topbar 背景色（避开刘海） */
 function setStatusBar(name){
   const SB = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
   if(!SB) return;
   SB.setOverlaysWebView({ overlay:false }).catch(()=>{});
-  SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{});
-  SB.setStyle({style:'LIGHT'}).catch(()=>{});
+  if(name==='settings'){
+    SB.setBackgroundColor({color:'#ffffff'}).catch(()=>{});
+    SB.setStyle({style:'DARK'}).catch(()=>{});
+  } else {
+    SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{});
+    SB.setStyle({style:'LIGHT'}).catch(()=>{});
+  }
 }
 setStatusBar('list');
 
