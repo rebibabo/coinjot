@@ -68,7 +68,7 @@ function renderPiePanel(rows, total, us){
         <div class="nm">${r.c.icon} ${r.c.name}</div>
         <div class="pct">${(r.amt/total*100).toFixed(1)}% · ${fmt(r.amt,us)}</div>
       </div></div>`).join('');
-  return `<div class="card pie-panel animating">
+  return `<div class="card pie-panel">
     <div class="pie-wrap">
       ${renderPie(rows,total,us)}
       <div class="legend">${legend}</div>
@@ -82,7 +82,7 @@ function renderBarsPanel(rows, us){
         <span class="bar-arrow">›</span></div>
       <div class="bar-track"><div class="bar-fill" style="--bar-w:${r.amt/rows[0].amt*100}%;width:var(--bar-w);background:${r.color}"></div></div>
     </div>`).join('');
-  return `<div class="card bars-panel animating"><div class="bars-hint">点击查看该分类下的明细</div><div class="bars">${bars}</div></div>`;
+  return `<div class="card bars-panel"><div class="bars-hint">点击查看该分类下的明细</div><div class="bars">${bars}</div></div>`;
 }
 function monthOffset(y, m, delta){
   const d = new Date(y, m + delta, 1);
@@ -145,10 +145,15 @@ function updateDailyTrendScale(){
   });
 }
 
-function renderStats(){
+function renderStats(animate){
+  if(animate===undefined) animate=true;
   const box = document.getElementById('statsContent');
   if(statView==='month'){
     box.innerHTML = renderDailyTrend() + renderTrend();
+    if(animate) requestAnimationFrame(()=>{
+      const el = box.querySelector('.day-trend, .month-trend');
+      if(el) el.classList.add('animating');
+    });
     return;
   }
   const recs = monthRecords().filter(r=>r.type===statType);
@@ -167,6 +172,10 @@ function renderStats(){
     main = statView==='bar' ? renderBarsPanel(rows, us) : renderPiePanel(rows, total, us);
   }
   box.innerHTML = main;
+  if(animate) requestAnimationFrame(()=>{
+    const panel = box.querySelector('.pie-panel, .bars-panel');
+    if(panel) panel.classList.add('animating');
+  });
 }
 
 function renderDailyTrend(){
@@ -257,7 +266,7 @@ document.querySelectorAll('[data-stat-view]').forEach(b=>{
 
 /* 点分类（图例或柱条）→ 跳到明细并按该分类筛选 */
 document.getElementById('statsContent').addEventListener('click', e=>{
-  if(e.target.closest('[data-clear-stat]')){ clearStatSelection(); renderStats(); return; }
+  if(e.target.closest('[data-clear-stat]')){ clearStatSelection(); renderStats(false); return; }
   const day = e.target.closest('[data-day]');
   if(day){
     setDateFilter(statType, day.dataset.day);
@@ -273,7 +282,7 @@ document.getElementById('statsContent').addEventListener('click', e=>{
   if(pick){
     const id = pick.dataset.cat;
     statPickedCats.has(id) ? statPickedCats.delete(id) : statPickedCats.add(id);
-    renderStats(); return;
+    renderStats(false); return;
   }
   const el = e.target.closest('[data-cat]'); if(!el) return;
   setCatFilter(statType, el.dataset.cat);
