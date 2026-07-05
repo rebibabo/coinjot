@@ -58,6 +58,49 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Set Android navigation bar white without divider
+        run: |
+          cat > android/app/src/main/java/com/rebibabo/coinjot/MainActivity.java <<'EOF'
+          package com.rebibabo.coinjot;
+
+          import android.graphics.Color;
+          import android.os.Build;
+          import android.os.Bundle;
+          import android.view.View;
+          import android.view.Window;
+          import android.view.WindowInsetsController;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  Window window = getWindow();
+                  window.setNavigationBarColor(Color.WHITE);
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                      window.setNavigationBarDividerColor(Color.TRANSPARENT);
+                  }
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                      window.setNavigationBarContrastEnforced(false);
+                  }
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                      WindowInsetsController controller = window.getInsetsController();
+                      if (controller != null) {
+                          controller.setSystemBarsAppearance(
+                              WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
+                              WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+                          );
+                      }
+                  } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                      window.getDecorView().setSystemUiVisibility(
+                          window.getDecorView().getSystemUiVisibility()
+                              | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+                      );
+                  }
+              }
+          }
+          EOF
+
       - name: Lock portrait orientation
         run: sed -i '/android:name=".MainActivity"/a\            android:screenOrientation="portrait"' android/app/src/main/AndroidManifest.xml
 

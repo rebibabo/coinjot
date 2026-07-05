@@ -10,6 +10,7 @@ const PIE_CENTER = 120;
 const PIE_OUTER = 110;
 const PIE_INNER = 68;
 const PIE_LIFT = 14;
+const DAY_MAX_BAR_HEIGHT = 220;
 
 function clearStatSelection(){
   statPickedCats.clear();
@@ -38,12 +39,13 @@ function donutSlicePath(start, end, outer, inner){
 
 function renderPie(rows, total, us){
   let acc = 0;
-  const slices = rows.map(r=>{
+  const slices = rows.map((r, idx)=>{
     const start = acc / total * 360, end = (acc + r.amt) / total * 360;
     acc += r.amt;
     const picked = statPickedCats.has(r.id);
     const offset = picked ? PIE_LIFT : 0;
     return `<path class="pie-slice${picked?' picked':''}" data-cat="${r.id}"
+      style="--delay:${idx * 38}ms"
       d="${donutSlicePath(start,end,PIE_OUTER+offset,PIE_INNER+offset)}" fill="${r.color}"></path>`;
   }).join('');
   const pickedRows = rows.filter(r=>statPickedCats.has(r.id));
@@ -60,24 +62,24 @@ function renderPie(rows, total, us){
   </div>`;
 }
 function renderPiePanel(rows, total, us){
-  const legend = rows.map(r=>`<div class="row${statPickedCats.has(r.id)?' picked':''}" data-cat="${r.id}">
+  const legend = rows.map((r, idx)=>`<div class="row${statPickedCats.has(r.id)?' picked':''}" data-cat="${r.id}" style="--delay:${idx * 42}ms">
       <span class="dot" style="background:${r.color}"></span>
       <div class="lg-info">
         <div class="nm">${r.c.icon} ${r.c.name}</div>
         <div class="pct">${(r.amt/total*100).toFixed(1)}% · ${fmt(r.amt,us)}</div>
       </div></div>`).join('');
-  return `<div class="card">
+  return `<div class="card pie-panel animating">
     <div class="pie-wrap">
       ${renderPie(rows,total,us)}
       <div class="legend">${legend}</div>
     </div></div>`;
 }
 function renderBarsPanel(rows, us){
-  const bars = rows.map(r=>`<div class="bar-item" data-cat="${r.id}">
+  const bars = rows.map((r, idx)=>`<div class="bar-item" data-cat="${r.id}" style="--delay:${idx * 46}ms">
       <div class="bar-top"><span>${r.c.icon} ${r.c.name}</span><span>${fmt(r.amt,us)}</span></div>
-      <div class="bar-track"><div class="bar-fill" style="width:${r.amt/rows[0].amt*100}%;background:${r.color}"></div></div>
+      <div class="bar-track"><div class="bar-fill" style="--bar-w:${r.amt/rows[0].amt*100}%;width:var(--bar-w);background:${r.color}"></div></div>
     </div>`).join('');
-  return `<div class="card"><div class="bars-hint">点击查看该分类下的明细</div><div class="bars">${bars}</div></div>`;
+  return `<div class="card bars-panel animating"><div class="bars-hint">点击查看该分类下的明细</div><div class="bars">${bars}</div></div>`;
 }
 function monthOffset(y, m, delta){
   const d = new Date(y, m + delta, 1);
@@ -109,13 +111,21 @@ function scaledDayHeight(total, max, maxBarHeight){
   const exponent = 1 - dayTrendTemp * .7;
   return Math.round(Math.pow(total / Math.max(1, max), exponent) * maxBarHeight) + 3;
 }
+function dayBarColor(total, max){
+  if(!total) return '#e7efff';
+  const t = Math.max(0, Math.min(1, total / Math.max(1, max)));
+  const mix = .18 + Math.pow(t, .72) * .82;
+  const lo = [159,189,255], hi = [60,125,255];
+  const rgb = lo.map((v, i)=>Math.round(v + (hi[i] - v) * mix));
+  return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+}
 function updateDailyTrendScale(){
   const trend = document.querySelector('.day-trend');
   if(!trend) return;
   const items = [...trend.querySelectorAll('[data-day]')];
   const totals = items.map(el=>parseFloat(el.dataset.total || '0') || 0);
   const max = Math.max(1, ...totals);
-  const maxBarHeight = 230;
+  const maxBarHeight = DAY_MAX_BAR_HEIGHT;
   const label = document.getElementById('dayTempVal');
   if(label) label.textContent = dayTempText();
   trend.classList.add('scaling');
@@ -123,7 +133,10 @@ function updateDailyTrendScale(){
     const h = scaledDayHeight(totals[i], max, maxBarHeight);
     el.style.setProperty('--bar-h', h+'px');
     const bar = el.querySelector('.tb-bar');
-    if(bar) bar.style.height = h+'px';
+    if(bar){
+      bar.style.height = h+'px';
+      bar.style.background = dayBarColor(totals[i], max);
+    }
   });
 }
 
@@ -164,7 +177,8 @@ function renderDailyTrend(){
     if(d.getFullYear()!==viewYear || d.getMonth()!==viewMonth) return;
     days[d.getDate()-1].total += toUnit(r.amount, r.currency, r.date.slice(0,10));
   });
-  const maxBarHeight = 230;
+  const maxBarHeight = DAY_MAX_BAR_HEIGHT;
+  const maxTotal = Math.max(1, ...days.map(x=>x.total));
   const heights = scaledDayHeights(days, maxBarHeight);
   const heightOf = x => x.total ? (heights.get(x.date) || 3) : 3;
   const renderPart = (part, title, offset) => {
@@ -176,7 +190,7 @@ function renderDailyTrend(){
         return `<div class="tb" data-day="${x.date}" data-total="${x.total}" style="--bar-h:${h}px;--delay:${delay}ms">
           <div class="tb-plot">
             <div class="tb-val">${x.total ? Math.round(x.total) : ''}</div>
-            <div class="tb-bar" style="height:${h}px;background:${x.total?'#9fbdff':'#e7efff'}"></div>
+            <div class="tb-bar" style="height:${h}px;background:${dayBarColor(x.total, maxTotal)}"></div>
           </div>
           <div class="tb-lbl">${x.d}</div></div>`;
       }).join('')}</div></div>`;
