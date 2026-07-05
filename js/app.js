@@ -54,6 +54,7 @@ function goTab(name){
   topbar.style.display = name==='settings' ? 'none' : '';
   setStatusBar(name);
   if(name!=='settings') renderTop();   // 顶栏可见后重算金额字号（避免隐藏时量不到宽）
+  if(name==='stats' && typeof restartTrendAnimations==='function') restartTrendAnimations();
   currentTab = name;
   restoreTabScroll(name);
 }
@@ -66,7 +67,7 @@ function openHelp(){
   const body = helpSheet.querySelector('.help-body'); if(body) body.scrollTop = 0;
   helpSheet.classList.add('show');
   const SB = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
-  if(SB){ SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{}); SB.setStyle({style:'DARK'}).catch(()=>{}); }
+  if(SB){ SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{}); SB.setStyle({style:'LIGHT'}).catch(()=>{}); }
 }
 function closeHelp(){
   helpSheet.classList.remove('show');
@@ -76,7 +77,7 @@ document.getElementById('helpBtn').onclick = openHelp;
 document.getElementById('helpBack').onclick = closeHelp;
 
 /* ===== 返回键：逐层关闭弹层 → 回明细 → 退出 ===== */
-const BACK_LAYERS = ['appDialog','updModal','catModal','aiModal','rateModal','curModal','filterModal','dpick','mpick','cpick','sheet','helpSheet','logSheet'];
+const BACK_LAYERS = ['appDialog','updModal','catModal','aiModal','rateModal','backupModal','curModal','dpick','filterModal','mpick','cpick','sheet','helpSheet','logSheet'];
 function handleBack(){
   for(const id of BACK_LAYERS){
     const el = document.getElementById(id);
@@ -107,8 +108,8 @@ function setStatusBar(name){
   const SB = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
   if(!SB) return;
   SB.setOverlaysWebView({ overlay:false }).catch(()=>{});
-  if(name==='settings'){ SB.setBackgroundColor({color:'#f4f5f7'}).catch(()=>{}); SB.setStyle({style:'DARK'}).catch(()=>{}); }
-  else { SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{}); SB.setStyle({style:'DARK'}).catch(()=>{}); }
+  if(name==='settings'){ SB.setBackgroundColor({color:'#f4f5f7'}).catch(()=>{}); SB.setStyle({style:'LIGHT'}).catch(()=>{}); }
+  else { SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{}); SB.setStyle({style:'LIGHT'}).catch(()=>{}); }
 }
 setStatusBar('list');
 

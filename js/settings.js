@@ -24,7 +24,10 @@ function addCategory(type){      openCatModal({mode:'add',  type}); }
 
 /* 完整备份对象（记录/分类/币种/统计单位/AI 配置） */
 function backupData(){
+  const now = new Date();
   return {
+    backupTime:now.toISOString(),
+    backupTimeText:fmtDateTime(now),
     v:2, records, cats, currencies, statUnit,
     ai:{ profiles:aiProfiles, activeId:aiActiveId, activeModel:aiActiveModel },
     prefs:{
@@ -32,7 +35,7 @@ function backupData(){
       et_privacy: localStorage.getItem('et_privacy'),
       et_autofocus: localStorage.getItem('et_autofocus')
     },
-    exportedAt:new Date().toISOString()
+    exportedAt:now.toISOString()
   };
 }
 /* 应用一份备份对象到当前状态（导入/恢复共用） */
@@ -79,6 +82,8 @@ async function copyText(t){
 }
 function nowStamp(){ const d=new Date(),p=n=>String(n).padStart(2,'0');
   return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'_'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds()); }
+function fmtDateTime(d){ const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds()); }
 function nativeFS(){ const c=window.Capacitor;
   return (c && c.isNativePlatform && c.isNativePlatform() && c.Plugins && c.Plugins.Filesystem) ? c.Plugins.Filesystem : null; }
 function shortPath(uri){ return (uri||'').replace(/^file:\/\//,'').replace(/^.*?\/Android\//,'Android/'); }
@@ -99,67 +104,205 @@ document.getElementById('lastBackupRow').onclick = async ()=>{
   showToast(await copyText(_lastBackupPath) ? '已复制备份路径' : '复制失败');
 };
 
-const MAN_PREFIX = 'coinjot-backup-', AUTO_PREFIX = 'coinjot-auto-';
-/* 按前缀只保留最近 keep 份（手动/自动各自独立，互不影响） */
-async function pruneByPrefix(FS, prefix, keep){
+const BK_PREFIX = 'coinjot-backup-';
+const BK_KEEP = 10;
+const BK_META = 'et_backup_queue';
+const LS_BACKUP_CHANGES = 'et_autobackup_changes';
+let autoBackupBusy = false;
+let backupChoices = [];
+let selectedBackupIndex = -1;
+
+function backupSlotName(slot){ return BK_PREFIX+String(slot).padStart(2,'0')+'.json'; }
+function backupLabel(time){
+  const t = new Date(time || Date.now());
+  return Number.isNaN(t.getTime()) ? '未知时间' : fmtDateTime(t);
+}
+function loadBackupMeta(){
   try{
-    const list = (await FS.readdir({ directory:'EXTERNAL', path:BK_DIR })).files || [];
-    const names = list.map(f=> typeof f==='string'?f:f.name)
-      .filter(n=>n.startsWith(prefix) && n.endsWith('.json')).sort();
-    for(const n of names.slice(0, Math.max(0, names.length-keep)))
-      await FS.deleteFile({ directory:'EXTERNAL', path:BK_DIR+'/'+n });
+    const m = JSON.parse(localStorage.getItem(BK_META)||'');
+    if(m && Array.isArray(m.items)) return {
+      pointer: Number.isInteger(m.pointer) ? m.pointer : m.items.length-1,
+      items: m.items.filter(x=>x && x.name).slice(0, BK_KEEP)
+    };
+  }catch(e){}
+  return null;
+}
+function saveBackupMeta(meta){
+  meta.items = (meta.items || []).slice(0, BK_KEEP);
+  if(meta.pointer >= meta.items.length) meta.pointer = meta.items.length - 1;
+  if(meta.pointer < 0 && meta.items.length) meta.pointer = meta.items.length - 1;
+  localStorage.setItem(BK_META, JSON.stringify(meta));
+}
+function backupMetaFromFiles(files){
+  const items = files.slice(0, BK_KEEP).reverse().map((f, i)=>({
+    slot:i, name:f.name, time:f.mtime || Date.now(), label:backupLabel(f.mtime || Date.now()), uri:''
+  }));
+  return { pointer:items.length-1, items };
+}
+async function ensureBackupMeta(FS){
+  const meta = loadBackupMeta();
+  if(meta && meta.items.length) return meta;
+  const files = await backupFiles(FS);
+  const fresh = backupMetaFromFiles(files);
+  if(fresh.items.length) saveBackupMeta(fresh);
+  return fresh;
+}
+
+/* 备份滑动窗口：保留最近 10 个可恢复窗口，恢复某个窗口后从它后面继续覆盖 */
+async function backupFiles(FS){
+  let list = [];
+  try{ list = (await FS.readdir({ directory:'EXTERNAL', path:BK_DIR })).files || []; }
+  catch(e){ return []; }
+  return list.map(f=> typeof f==='string'?{name:f,mtime:0}:f)
+    .filter(f=>f.name && f.name.endsWith('.json'))
+    .sort((a,b)=>(b.mtime||0)-(a.mtime||0) || b.name.localeCompare(a.name));
+}
+async function pruneBackupWindow(FS, meta){
+  try{
+    const keep = new Set((meta && meta.items || []).map(x=>x.name));
+    const files = await backupFiles(FS);
+    for(const f of files){
+      if(!keep.has(f.name)) await FS.deleteFile({ directory:'EXTERNAL', path:BK_DIR+'/'+f.name });
+    }
   }catch(e){}
 }
 
-async function backupLocal(){
+async function writeLatestBackup(source){
   const text = JSON.stringify(backupData(), null, 2);
-  const name = MAN_PREFIX+nowStamp()+'.json';
   const FS = nativeFS();
-  if(!FS){ download(name, text); return; }   // 浏览器退回下载
+  if(!FS){
+    if(source==='manual') download(BK_PREFIX+nowStamp()+'.json', text);
+    return { ok:false, skipped:true, reason:'当前不是 App 环境，无法写入本机备份' };
+  }
   try{
+    const meta = await ensureBackupMeta(FS);
+    if(meta.pointer < 0) meta.pointer = meta.items.length - 1;
+    let targetIndex = meta.pointer + 1;
+    let wrapped = false;
+    if(meta.items.length < BK_KEEP && targetIndex > meta.items.length) targetIndex = meta.items.length;
+    if(meta.items.length >= BK_KEEP && targetIndex >= BK_KEEP){ targetIndex = 0; wrapped = true; }
+
+    const slot = (targetIndex < meta.items.length && Number.isInteger(meta.items[targetIndex].slot))
+      ? meta.items[targetIndex].slot
+      : firstFreeBackupSlot(meta.items);
+    const name = backupSlotName(slot);
     const w = await FS.writeFile({ path:BK_DIR+'/'+name, data:text, directory:'EXTERNAL', encoding:'utf8', recursive:true });
-    localStorage.setItem('et_lastbackup', JSON.stringify({ time:Date.now(), name, uri:w.uri }));
-    await pruneByPrefix(FS, MAN_PREFIX, 10); renderLastBackup();
+    const item = { slot, name, time:Date.now(), label:backupLabel(Date.now()), uri:w.uri || '' };
+    if(wrapped){
+      meta.items.shift();
+      meta.items.push(item);
+      meta.pointer = meta.items.length - 1;
+    }else if(targetIndex >= meta.items.length){
+      meta.items.push(item);
+      meta.pointer = meta.items.length - 1;
+    }else{
+      meta.items[targetIndex] = item;
+      meta.pointer = targetIndex;
+    }
+    saveBackupMeta(meta);
+    localStorage.setItem('et_lastbackup', JSON.stringify({ time:item.time, name:item.name, uri:item.uri }));
+    await pruneBackupWindow(FS, meta); renderLastBackup();
+    return { ok:true };
+  }catch(e){
+    if(source==='manual') showAlert('备份失败：'+(e.message||e));
+    return { ok:false, reason:e.message||String(e) };
+  }
+}
+function firstFreeBackupSlot(items){
+  const used = new Set((items||[]).map(x=>x.slot).filter(Number.isInteger));
+  for(let i=0;i<BK_KEEP;i++){ if(!used.has(i)) return i; }
+  return 0;
+}
+async function backupLocal(){
+  const res = await writeLatestBackup('manual');
+  if(res.ok){
+    localStorage.setItem(LS_BACKUP_CHANGES, '0');
     showToast('已备份到本机 ✓');
-  }catch(e){ showAlert('备份失败：'+(e.message||e)); }
+  }
 }
 
-/* 每天首次打开自动备份一份（一天一个、同日覆盖，只留最近 7 天）；静默进行 */
-async function autoBackup(){
-  const FS = nativeFS();
-  if(!FS) return;                                              // 仅 App 内
-  if(localStorage.getItem('et_autobackup_date') === today()) return;   // 今天已自动备
+/* 明细连续增删改满 5 次后静默自动备份，成功后计数清零 */
+async function autoBackupByChanges(){
+  if(autoBackupBusy) return;
+  autoBackupBusy = true;
   try{
-    const name = AUTO_PREFIX+today()+'.json';
-    const w = await FS.writeFile({ path:BK_DIR+'/'+name, data:JSON.stringify(backupData(),null,2),
-      directory:'EXTERNAL', encoding:'utf8', recursive:true });
-    localStorage.setItem('et_autobackup_date', today());
-    localStorage.setItem('et_lastbackup', JSON.stringify({ time:Date.now(), name, uri:w.uri }));
-    await pruneByPrefix(FS, AUTO_PREFIX, 7); renderLastBackup();
-  }catch(e){}
+    const res = await writeLatestBackup('auto');
+    if(res.ok){
+      localStorage.setItem(LS_BACKUP_CHANGES, '0');
+      setTimeout(()=>showToast('已自动备份到本机 ✓'), 350);
+    }else if(res.skipped){
+      localStorage.setItem(LS_BACKUP_CHANGES, '0');
+    }else{
+      setTimeout(()=>showToast('自动备份失败：'+res.reason), 350);
+    }
+  }finally{ autoBackupBusy = false; }
 }
+function noteRecordChanged(n){
+  if(!nativeFS()) return;
+  n = Math.max(1, Number(n)||1);
+  const next = (parseInt(localStorage.getItem(LS_BACKUP_CHANGES)||'0', 10) || 0) + n;
+  localStorage.setItem(LS_BACKUP_CHANGES, String(next));
+  if(next >= 5) autoBackupByChanges();
+}
+window.noteRecordChanged = noteRecordChanged;
 
+function renderBackupList(){
+  const box = document.getElementById('backupList'); if(!box) return;
+  box.innerHTML = backupChoices.map((b, i)=>`
+    <button class="backup-item ${i===selectedBackupIndex?'on':''}" data-backup-i="${i}" type="button">
+      ${b.label || backupLabel(b.time)}
+      <div class="sub">${i+1} / ${backupChoices.length}${i===selectedBackupIndex?' · 当前选择':''}</div>
+    </button>`).join('');
+}
+async function restoreBackupAt(index){
+  const FS = nativeFS();
+  const pick = backupChoices[index];
+  if(!FS || !pick) return;
+  if(!(await showConfirm('从这个备份恢复：\n'+(pick.label || pick.name)+'\n\n将覆盖当前所有数据，确定？'))) return;
+  const r = await FS.readFile({ directory:'EXTERNAL', path:BK_DIR+'/'+pick.name, encoding:'utf8' });
+  const d = JSON.parse(typeof r.data==='string'?r.data:'');
+  if(!Array.isArray(d.records)) throw new Error('备份内容不正确');
+  applyBackup(d);
+
+  const meta = await ensureBackupMeta(FS);
+  const metaIndex = meta.items.findIndex(x=>x.name===pick.name);
+  if(metaIndex >= 0){
+    meta.pointer = metaIndex;
+    saveBackupMeta(meta);
+  }
+  localStorage.setItem('et_lastbackup', JSON.stringify({ time:pick.time || Date.now(), name:pick.name, uri:pick.uri || '' }));
+  renderLastBackup();
+  document.getElementById('backupModal').classList.remove('show');
+  showAlert('已从本机备份恢复 ✓');
+}
 async function restoreLocal(){
   const FS = nativeFS();
   if(!FS){ showAlert('本机恢复仅 App 内可用；浏览器请用「从文件导入备份」'); return; }
   try{
-    const list = (await FS.readdir({ directory:'EXTERNAL', path:BK_DIR })).files || [];
-    const files = list.map(f=> typeof f==='string'?{name:f,mtime:0}:f).filter(f=>f.name.endsWith('.json'));
-    if(!files.length){ showAlert('还没有本机备份，先点「一键备份到本机」'); return; }
-    files.sort((a,b)=>(b.mtime||0)-(a.mtime||0));   // 按修改时间取最新（自动/手动通吃）
-    const latest = files[0].name;
-    if(!(await showConfirm('从最近备份恢复：\n'+latest+'\n\n将覆盖当前所有数据，确定？'))) return;
-    const r = await FS.readFile({ directory:'EXTERNAL', path:BK_DIR+'/'+latest, encoding:'utf8' });
-    const d = JSON.parse(typeof r.data==='string'?r.data:'');
-    if(!Array.isArray(d.records)) throw new Error('备份内容不正确');
-    applyBackup(d);
-    showAlert('已从本机备份恢复 ✓');
+    const meta = await ensureBackupMeta(FS);
+    if(!meta.items.length){ showAlert('还没有本机备份，先点「一键备份到本机」'); return; }
+    backupChoices = meta.items.slice(-BK_KEEP);
+    selectedBackupIndex = backupChoices.length - 1;
+    renderBackupList();
+    document.getElementById('backupModal').classList.add('show');
   }catch(e){ showAlert('恢复失败：'+(e.message||e)); }
 }
 document.getElementById('btnBackupLocal').onclick = backupLocal;
 document.getElementById('btnRestoreLocal').onclick = restoreLocal;
+document.getElementById('backupCancel').onclick = ()=>document.getElementById('backupModal').classList.remove('show');
+document.getElementById('backupList').onclick = e=>{
+  const el = e.target.closest('[data-backup-i]'); if(!el) return;
+  selectedBackupIndex = Number(el.dataset.backupI);
+  renderBackupList();
+};
+document.getElementById('backupRestore').onclick = async ()=>{
+  try{ await restoreBackupAt(selectedBackupIndex); }
+  catch(e){ showAlert('恢复失败：'+(e.message||e)); }
+};
+document.getElementById('backupModal').onclick = e=>{
+  if(e.target.id==='backupModal') e.currentTarget.classList.remove('show');
+};
 renderLastBackup();
-autoBackup();   // 启动时每天自动备份一次
 document.getElementById('btnExportCsv').onclick=()=>{
   const head='日期,类型,分类,币种,金额,备注\n';
   const rows=records.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>{
@@ -227,9 +370,10 @@ cpick.onclick = e=>{
   const t = e.target.closest('[data-mergeto]');
   if(t && pendingDel){
     const {type, id} = pendingDel, target = t.dataset.mergeto;
-    records.forEach(r=>{ if(r.type===type && r.categoryId===id) r.categoryId=target; });
+    let changed = 0;
+    records.forEach(r=>{ if(r.type===type && r.categoryId===id){ r.categoryId=target; changed++; } });
     cats[type] = cats[type].filter(c=>c.id!==id);
-    save(); renderCatEditors(); renderAll();
+    save(); if(changed) noteRecordChanged(changed); renderCatEditors(); renderAll();
     cpick.classList.remove('show'); pendingDel=null;
   }
 };

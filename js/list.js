@@ -29,20 +29,28 @@ function fitSummary(els){
   }
 }
 
-/* 明细筛选：搜索词 q + 类型 type + 分类多选 catIds + 金额范围 amtMin/amtMax */
-let listFilter = { q:'', type:null, catIds:[], amtMin:null, amtMax:null };
-function isFiltered(){ return !!(listFilter.q||listFilter.type||listFilter.catIds.length||listFilter.amtMin!=null||listFilter.amtMax!=null); }
+/* 明细筛选：搜索词 q + 类型 type + 分类多选 catIds + 日期范围 + 金额范围 */
+function blankListFilter(){ return { q:'', type:null, catIds:[], dateStart:null, dateEnd:null, amtMin:null, amtMax:null }; }
+let listFilter = blankListFilter();
+function isFiltered(){
+  return !!(listFilter.q||listFilter.type||listFilter.catIds.length||listFilter.dateStart||listFilter.dateEnd||listFilter.amtMin!=null||listFilter.amtMax!=null);
+}
 function updateFilterBtn(){
-  const on = listFilter.type||listFilter.catIds.length||listFilter.amtMin!=null||listFilter.amtMax!=null;
+  const on = listFilter.type||listFilter.catIds.length||listFilter.dateStart||listFilter.dateEnd||listFilter.amtMin!=null||listFilter.amtMax!=null;
   document.getElementById('filterBtn').classList.toggle('on', !!on);
 }
 function resetFilters(){
-  listFilter = { q:'', type:null, catIds:[], amtMin:null, amtMax:null };
+  listFilter = blankListFilter();
   document.getElementById('searchIn').value=''; updateFilterBtn(); renderList();
 }
 /* 从统计页钻取：按单个分类筛选 */
 function setCatFilter(type, catId){
-  listFilter = { q:'', type, catIds:[catId], amtMin:null, amtMax:null };
+  listFilter = { ...blankListFilter(), type, catIds:[catId] };
+  document.getElementById('searchIn').value=''; updateFilterBtn(); renderList();
+}
+/* 从统计页钻取：按某一天筛选 */
+function setDateFilter(type, day){
+  listFilter = { ...blankListFilter(), type, dateStart:day, dateEnd:day };
   document.getElementById('searchIn').value=''; updateFilterBtn(); renderList();
 }
 /* 筛选条：筛选中标记 + 清除 + 合计 */
@@ -51,11 +59,20 @@ function renderFilterBar(recs){
   if(!isFiltered()){ bar.innerHTML=''; return; }
   let exp=0, inc=0; recs.forEach(r=>{ const v=toUnit(r.amount, r.currency, r.date.slice(0,10)); r.type==='expense'?exp+=v:inc+=v; });
   const us=unitSymbol();
-  const parts=[`共 ${recs.length} 笔`];
+  const range = filterDateText();
+  const parts=[range, `共 ${recs.length} 笔`].filter(Boolean);
   if(exp) parts.push(`支 ${fmt(exp,us)}`);
   if(inc) parts.push(`收 ${fmt(inc,us)}`);
   bar.innerHTML = `<span class="fchip">筛选中 <span class="fx" id="clearFilter">✕</span></span><span class="fsum">${parts.join(' · ')}</span>`;
   document.getElementById('clearFilter').onclick = resetFilters;
+}
+function filterDateText(){
+  const s = listFilter.dateStart, e = listFilter.dateEnd;
+  const short = d => d ? d.slice(5).replace('-', '/') : '';
+  if(s && e) return `日期 ${short(s)}-${short(e)}`;
+  if(s) return `日期 ${short(s)} 起`;
+  if(e) return `日期 至 ${short(e)}`;
+  return '';
 }
 document.getElementById('searchIn').addEventListener('input', e=>{ listFilter.q = e.target.value.trim(); renderList(); });
 
@@ -64,10 +81,25 @@ const filterModal = document.getElementById('filterModal');
 let fmDraft = { type:null, cats:new Set() };
 document.getElementById('filterBtn').onclick = ()=>{
   fmDraft = { type:listFilter.type, cats:new Set(listFilter.catIds) };
+  setFmDateBtn('fmStart', listFilter.dateStart, '开始日期');
+  setFmDateBtn('fmEnd', listFilter.dateEnd, '结束日期');
   document.getElementById('fmMin').value = listFilter.amtMin!=null ? listFilter.amtMin : '';
   document.getElementById('fmMax').value = listFilter.amtMax!=null ? listFilter.amtMax : '';
   renderFmType(); renderFmCats(); filterModal.classList.add('show');
 };
+function setFmDateBtn(id, value, emptyText){
+  const btn = document.getElementById(id);
+  btn.dataset.date = value || '';
+  btn.textContent = value ? value.slice(5).replace('-', '/') : emptyText;
+  btn.classList.toggle('empty', !value);
+}
+function openFmDate(id, emptyText){
+  const btn = document.getElementById(id);
+  if(typeof window.openDatePicker!=='function') return;
+  window.openDatePicker(btn.dataset.date || today(), d=>setFmDateBtn(id, d, emptyText));
+}
+document.getElementById('fmStart').onclick = ()=>openFmDate('fmStart', '开始日期');
+document.getElementById('fmEnd').onclick = ()=>openFmDate('fmEnd', '结束日期');
 function renderFmType(){
   document.getElementById('fmType').innerHTML = [['','全部'],['expense','支出'],['income','收入']]
     .map(([v,l])=>`<span class="prov${(fmDraft.type||'')===v?' on':''}" data-ftype="${v}">${l}</span>`).join('');
@@ -103,7 +135,11 @@ document.getElementById('fmCats').addEventListener('click', e=>{
 document.getElementById('fmReset').onclick = ()=>{ filterModal.classList.remove('show'); resetFilters(); };
 document.getElementById('fmApply').onclick = ()=>{
   const min=parseFloat(document.getElementById('fmMin').value), max=parseFloat(document.getElementById('fmMax').value);
+  let start = document.getElementById('fmStart').dataset.date || null;
+  let end = document.getElementById('fmEnd').dataset.date || null;
+  if(start && end && start > end) [start, end] = [end, start];
   listFilter.type=fmDraft.type; listFilter.catIds=[...fmDraft.cats];
+  listFilter.dateStart = start; listFilter.dateEnd = end;
   listFilter.amtMin = isFinite(min)?min:null; listFilter.amtMax = isFinite(max)?max:null;
   filterModal.classList.remove('show'); updateFilterBtn(); renderList();
 };
@@ -112,6 +148,8 @@ filterModal.onclick = e=>{ if(e.target===filterModal) filterModal.classList.remo
 function renderList(){
   const box = document.getElementById('listContent');
   let recs = monthRecords();
+  if(listFilter.dateStart) recs = recs.filter(r=>r.date.slice(0,10)>=listFilter.dateStart);
+  if(listFilter.dateEnd) recs = recs.filter(r=>r.date.slice(0,10)<=listFilter.dateEnd);
   if(listFilter.type) recs = recs.filter(r=>r.type===listFilter.type);
   if(listFilter.catIds.length) recs = recs.filter(r=>listFilter.catIds.includes(r.categoryId));
   if(listFilter.amtMin!=null) recs = recs.filter(r=>r.amount>=listFilter.amtMin);

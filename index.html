@@ -56,6 +56,11 @@
           <button class="on" data-stat="expense">支出</button>
           <button data-stat="income">收入</button>
         </div>
+        <div class="stat-view-switch">
+          <button class="on" data-stat-view="pie">饼状图</button>
+          <button data-stat-view="bar">柱状图</button>
+          <button data-stat-view="month">月度</button>
+        </div>
         <div id="statsContent"></div>
       </div>
 
@@ -211,7 +216,7 @@
       </div>
     </div>
 
-    <!-- 日期选择面板（中文日历，记账/编辑用） -->
+    <!-- 日期选择面板（中文日历，记账/编辑/筛选用） -->
     <div class="dpick" id="dpick">
       <div class="dpick-card">
         <div class="dpick-head">
@@ -233,6 +238,12 @@
         <div class="prov-row" id="fmType"></div>
         <div class="am-label">分类</div>
         <div class="prov-row" id="fmCats"></div>
+        <div class="am-label">日期范围</div>
+        <div class="fm-date">
+          <button class="am-in fm-date-btn empty" id="fmStart" type="button">开始日期</button>
+          <span>—</span>
+          <button class="am-in fm-date-btn empty" id="fmEnd" type="button">结束日期</button>
+        </div>
         <div class="am-label">金额范围</div>
         <div class="fm-amt">
           <input class="am-in" id="fmMin" placeholder="最低" inputmode="decimal">
@@ -242,6 +253,18 @@
         <div class="modal-btns">
           <button class="mb cancel" id="fmReset">重置</button>
           <button class="mb ok" id="fmApply">应用</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 本机备份恢复：选择最近 10 个备份窗口 -->
+    <div class="modal" id="backupModal">
+      <div class="modal-card backup-card">
+        <div class="modal-title">选择备份时间</div>
+        <div class="backup-list" id="backupList"></div>
+        <div class="modal-btns">
+          <button class="mb cancel" id="backupCancel">取消</button>
+          <button class="mb ok" id="backupRestore">恢复</button>
         </div>
       </div>
     </div>

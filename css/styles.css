@@ -99,9 +99,14 @@ body{
 .filter-btn{ flex:none; border:none; border-radius:999px; background:#eef0f4; color:var(--accent);
   font-size:38px; font-weight:600; padding:0 46px; cursor:pointer; }
 .filter-btn.on{ background:var(--accent); color:#fff; }
-.fm-amt{ display:flex; align-items:center; gap:20px; }
-.fm-amt .am-in{ flex:1; margin-bottom:0; }
-.fm-amt span{ font-size:40px; color:var(--sub); }
+.fm-amt,.fm-date{ display:flex; align-items:center; gap:20px; }
+.fm-amt .am-in,.fm-date .am-in{ flex:1; min-width:0; margin-bottom:0; }
+.fm-amt span,.fm-date span{ font-size:40px; color:var(--sub); }
+.fm-date{ margin-bottom:30px; }
+.fm-date-btn{ background:#fff; color:var(--ink); text-align:center; cursor:pointer; }
+.fm-date-btn.empty{ color:var(--sub); }
+.fm-amt .am-in{ text-align:center; }
+.fm-amt .am-in::placeholder{ color:var(--sub); opacity:1; }
 .filter-bar:empty{ display:none; }
 .filter-bar{ margin-bottom:24px; display:flex; align-items:center; flex-wrap:wrap; gap:20px; }
 .fsum{ font-size:34px; color:var(--sub); }
@@ -144,10 +149,14 @@ body{
 
 /* ---------- 统计 ---------- */
 .stat-switch{ display:flex; background:#e7e8ee; border-radius:999px; padding:8px;
-  margin-bottom:36px; }
+  margin-bottom:18px; }
 .stat-switch button{ flex:1;border:none;background:none;font-size:40px;
   padding:24px;border-radius:999px;color:var(--sub);cursor:pointer;font-weight:600; }
 .stat-switch button.on{ background:#fff;color:var(--ink);box-shadow:0 4px 16px rgba(0,0,0,.08); }
+.stat-view-switch{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:36px; }
+.stat-view-switch button{ border:none; background:#eef0f4; color:var(--sub);
+  border-radius:20px; padding:22px 8px; font-size:34px; font-weight:600; cursor:pointer; }
+.stat-view-switch button.on{ background:#eaf1ff; color:var(--accent); }
 .pie-wrap{ display:flex; align-items:center; gap:28px; padding:50px 30px; }
 .pie{ flex:0 0 60%; aspect-ratio:1; border-radius:50%; position:relative;
   display:flex; align-items:center; justify-content:center; }
@@ -174,14 +183,60 @@ body{
 .legend .pct{ font-size:30px; color:var(--sub); margin-top:6px;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 /* 近6月趋势 */
-.trend{ padding:40px 40px 30px; margin-top:36px; }
+.trend{ padding:46px 40px 36px; margin-top:0; }
+.trend + .trend{ margin-top:36px; }
 .trend-title{ font-size:38px; font-weight:700; margin:0 10px 30px; }
-.trend-bars{ display:flex; align-items:flex-end; justify-content:space-between; gap:18px; height:300px; }
-.tb{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:12px; height:100%; cursor:pointer; }
+.trend-head{ display:flex; align-items:center; justify-content:space-between; gap:22px; margin:0 10px 30px; }
+.trend-head .trend-title{ margin:0; flex:none; }
+.day-scale{ margin:0; display:flex; align-items:center; justify-content:flex-end; gap:12px;
+  flex:1; min-width:0; color:var(--sub); font-size:26px; white-space:nowrap; }
+.day-scale span{ flex:none; }
+.day-scale strong{ flex:none; min-width:48px; color:var(--accent); font-size:26px; text-align:right; }
+.day-scale input{ flex:1; max-width:210px; min-width:130px; height:40px; margin:0; accent-color:var(--accent); }
+.day-scale input::-webkit-slider-runnable-track{ height:12px; border-radius:999px; background:#dfe7ff; }
+.day-scale input::-webkit-slider-thumb{ appearance:none; width:40px; height:40px; border-radius:50%;
+  background:var(--accent); margin-top:-14px; box-shadow:0 6px 16px rgba(60,125,255,.28); }
+.trend-bars{ display:flex; align-items:flex-end; justify-content:space-between; gap:18px; height:450px; }
+.tb{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:12px; height:100%; cursor:pointer; }
 .tb-val{ font-size:26px; color:var(--sub); }
 .tb-bar{ width:70%; border-radius:14px 14px 0 0; min-height:3px; }
 .tb-lbl{ font-size:30px; color:var(--sub); }
 .tb.on .tb-lbl{ color:var(--accent); font-weight:700; }
+.month-trend .tb-plot{ position:relative; width:100%; height:300px;
+  display:flex; align-items:flex-end; justify-content:center; overflow:visible; }
+.month-trend .tb-val{ position:absolute; left:50%; bottom:calc(var(--bar-h) + 10px);
+  width:max-content; max-width:none; white-space:nowrap; text-align:center;
+  transform:translateX(-50%); pointer-events:none; }
+.month-trend .tb-bar{ flex:none; }
+.day-trend .trend-bars{ display:grid; grid-template-columns:repeat(var(--days),minmax(0,1fr));
+  align-items:end; gap:7px; height:316px; overflow:visible; }
+.day-half + .day-half{ margin-top:34px; }
+.day-half-title{ margin:0 4px 18px; font-size:28px; color:var(--sub); }
+.day-trend .tb{ display:grid; grid-template-rows:280px 28px; align-items:end;
+  gap:8px; cursor:pointer; min-width:0; }
+.day-trend .tb-plot{ position:relative; height:280px; min-width:0;
+  display:flex; align-items:flex-end; justify-content:center; overflow:visible; }
+.day-trend .tb-val{ position:absolute; left:50%; bottom:calc(var(--bar-h) + 8px);
+  width:max-content; max-width:none; white-space:nowrap; text-align:center;
+  font-size:27px; color:var(--sub); transform:translateX(-50%) scale(.9);
+  transform-origin:center bottom; pointer-events:none; }
+.day-trend .tb-bar{ flex:none; width:40px; max-width:100%; border-radius:14px 14px 0 0; }
+.day-trend.scaling .tb-bar{ transition:height .12s ease; }
+.day-trend.scaling .tb-val{ transition:bottom .12s ease; }
+.day-trend .tb-lbl{ width:100%; min-height:32px; font-size:27px; line-height:32px; text-align:center; }
+.day-trend.animating .tb-bar,.month-trend.animating .tb-bar{ transform-origin:center bottom;
+  animation:dayBarRise .52s cubic-bezier(.2,.82,.2,1) both;
+  animation-delay:var(--delay,0ms); }
+.day-trend.animating .tb-val,.month-trend.animating .tb-val{ animation:dayValIn .34s ease both;
+  animation-delay:calc(var(--delay,0ms) + 140ms); }
+@keyframes dayBarRise{
+  from{ transform:scaleY(.08); opacity:.45; }
+  to{ transform:scaleY(1); opacity:1; }
+}
+@keyframes dayValIn{
+  from{ opacity:0; transform:translateX(-50%) translateY(10px) scale(.9); }
+  to{ opacity:1; transform:translateX(-50%) translateY(0) scale(.9); }
+}
 
 .bars-hint{ padding:36px 50px 2px;color:var(--sub);font-size:34px;font-weight:400; }
 .bars{ padding:24px 50px 50px; }
@@ -375,6 +430,12 @@ body{
 .modal-card{ background:var(--card); border-radius:48px; width:88%; padding:54px;
   box-shadow:var(--shadow); }
 .modal-title{ font-size:52px; font-weight:700; text-align:center; margin-bottom:44px; }
+.backup-card{ max-height:82vh; display:flex; flex-direction:column; }
+.backup-list{ overflow:auto; display:flex; flex-direction:column; gap:18px; padding:4px 0; }
+.backup-item{ border:3px solid var(--line); border-radius:30px; background:#fff; color:var(--ink);
+  padding:24px 28px; font-size:36px; font-weight:700; line-height:1.25; text-align:left; }
+.backup-item.on{ border-color:var(--accent); background:#eaf1ff; color:var(--accent); }
+.backup-item .sub{ margin-top:8px; font-size:28px; font-weight:400; color:var(--sub); }
 .ce-row{ display:flex; align-items:center; gap:28px; margin-bottom:30px; }
 .ce-icon{ width:140px;height:140px;flex:none;border-radius:34px;background:#f1f2f6;
   display:flex;align-items:center;justify-content:center;font-size:76px; }
@@ -394,7 +455,7 @@ body{
 .modal-btns .ok{ background:var(--accent); color:#fff; }
 
 /* ---------- 日期选择面板（中文日历） ---------- */
-.dpick{ position:absolute; inset:0; background:rgba(0,0,0,.35); z-index:70;
+.dpick{ position:absolute; inset:0; background:rgba(0,0,0,.35); z-index:90;
   display:none; align-items:center; justify-content:center; }
 .dpick.show{ display:flex; }
 .dpick-card{ background:var(--card); border-radius:44px; width:86%; padding:50px;

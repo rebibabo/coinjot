@@ -78,7 +78,8 @@ document.getElementById('sheetDel').onclick=()=>{
   if(idx<0) return;
   const removed = records[idx];
   records.splice(idx,1); save(); closeSheet(); renderAll();
-  showToast('已删除', '撤销', ()=>{ records.splice(idx,0,removed); save(); renderAll(); });
+  if(window.noteRecordChanged) noteRecordChanged();
+  showToast('已删除', '撤销', ()=>{ records.splice(idx,0,removed); save(); if(window.noteRecordChanged) noteRecordChanged(); renderAll(); });
 };
 
 document.querySelectorAll('.type-toggle button').forEach(b=>{
@@ -144,10 +145,20 @@ function updateDateBtn(){
 }
 /* 自定义中文日历 */
 const dpick=document.getElementById('dpick');
-let dpYear, dpMonth;
-document.getElementById('dateBtn').onclick=()=>{
-  const [y,m]=entryDate.split('-').map(Number);
+let dpYear, dpMonth, dpValue=today(), dpPick=null;
+function openDatePicker(value, onPick){
+  dpValue = value || today();
+  dpPick = typeof onPick==='function' ? onPick : null;
+  const [y,m]=dpValue.split('-').map(Number);
   dpYear=y; dpMonth=m-1; renderDateGrid(); dpick.classList.add('show');
+}
+function closeDatePicker(){
+  dpick.classList.remove('show');
+  dpPick = null;
+}
+window.openDatePicker = openDatePicker;
+document.getElementById('dateBtn').onclick=()=>{
+  openDatePicker(entryDate, d=>{ entryDate=d; updateDateBtn(); });
 };
 function renderDateGrid(){
   document.getElementById('dpTitle').textContent = `${dpYear}年${dpMonth+1}月`;
@@ -157,17 +168,24 @@ function renderDateGrid(){
   for(let i=0;i<first;i++) cells+='<span></span>';
   for(let d=1;d<=days;d++){
     const ds = `${dpYear}-${String(dpMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    cells += `<span class="d${ds===entryDate?' on':''}${ds===today()?' today':''}" data-d="${ds}">${d}</span>`;
+    cells += `<span class="d${ds===dpValue?' on':''}${ds===today()?' today':''}" data-d="${ds}">${d}</span>`;
   }
   document.getElementById('dpGrid').innerHTML = cells;
 }
 document.getElementById('dpPrev').onclick=()=>{ if(--dpMonth<0){dpMonth=11;dpYear--;} renderDateGrid(); };
 document.getElementById('dpNext').onclick=()=>{ if(++dpMonth>11){dpMonth=0;dpYear++;} renderDateGrid(); };
-document.getElementById('dpToday').onclick=()=>{ entryDate=today(); updateDateBtn(); dpick.classList.remove('show'); };
+document.getElementById('dpToday').onclick=()=>{
+  const d=today();
+  if(dpPick) dpPick(d);
+  closeDatePicker();
+};
 dpick.onclick=e=>{
-  if(e.target===dpick){ dpick.classList.remove('show'); return; }
+  if(e.target===dpick){ closeDatePicker(); return; }
   const cell=e.target.closest('[data-d]');
-  if(cell){ entryDate=cell.dataset.d; updateDateBtn(); dpick.classList.remove('show'); }
+  if(cell){
+    if(dpPick) dpPick(cell.dataset.d);
+    closeDatePicker();
+  }
 };
 
 function commitEntry(){
@@ -189,6 +207,7 @@ function commitEntry(){
     localStorage.setItem(LS_LASTCUR, entryCur);   // 下次新记账默认沿用
   }
   save();
+  if(window.noteRecordChanged) noteRecordChanged();
   // 跳到该笔所在月份
   const [jy,jm] = entryDate.split('-').map(Number);
   viewYear=jy; viewMonth=jm-1;

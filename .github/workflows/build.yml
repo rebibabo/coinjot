@@ -15,9 +15,6 @@ concurrency:
 
 jobs:
   build:
-    # 只有两种情况才打包发布：提交信息带 [release]，或在 Actions 页手动 Run workflow。
-    # 普通推送不构建，避免每次提交都覆盖 APK。
-    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') }}
     runs-on: ubuntu-latest
     env:
       GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
@@ -60,37 +57,6 @@ jobs:
 
       - name: Add Android platform
         run: npx cap add android
-
-      - name: Set Android navigation bar white
-        run: |
-          cat > android/app/src/main/java/com/rebibabo/coinjot/MainActivity.java <<'EOF'
-          package com.rebibabo.coinjot;
-
-          import android.graphics.Color;
-          import android.os.Build;
-          import android.os.Bundle;
-          import android.view.View;
-          import android.view.Window;
-          import com.getcapacitor.BridgeActivity;
-
-          public class MainActivity extends BridgeActivity {
-              @Override
-              public void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  Window window = getWindow();
-                  window.setNavigationBarColor(Color.WHITE);
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
-                  }
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                      window.setNavigationBarDividerColor(Color.WHITE);
-                  }
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                      window.setNavigationBarContrastEnforced(false);
-                  }
-              }
-          }
-          EOF
 
       - name: Lock portrait orientation
         run: sed -i '/android:name=".MainActivity"/a\            android:screenOrientation="portrait"' android/app/src/main/AndroidManifest.xml
@@ -165,7 +131,14 @@ jobs:
       - name: Rename APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk coinjot.apk
 
+      - name: Upload debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coinjot-apk
+          path: coinjot.apk
+
       - name: Publish to Release (latest)
+        if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
@@ -175,7 +148,7 @@ jobs:
 
       # 同步 APK 到 Gitee 的 latest Release（国内下载/应用内更新用）；未配 GITEE_TOKEN 则跳过
       - name: Publish APK to Gitee Release
-        if: ${{ env.GITEE_TOKEN != '' }}
+        if: ${{ env.GITEE_TOKEN != '' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]')) }}
         env:
           OWNER: yuan-zhongsheng
           REPO: coinjot
@@ -214,7 +187,7 @@ jobs:
 
       # APK 已在 Gitee 后，再把 version.json 更新到 Gitee（顺序正确，用户不会下到旧包）
       - name: Sync version.json to Gitee
-        if: ${{ env.GITEE_TOKEN != '' }}
+        if: ${{ env.GITEE_TOKEN != '' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]')) }}
         env:
           OWNER: yuan-zhongsheng
           REPO: coinjot
