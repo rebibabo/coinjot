@@ -48,6 +48,7 @@ body{
 /* ---------- 主体滚动区 ---------- */
 .body{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .page{ display:none; padding:40px 50px 60px; }
+#page-settings{ padding-top:calc(70px + env(safe-area-inset-top,0px)); }
 .page.active{ display:block; }
 
 /* ---------- 通用 ---------- */
@@ -460,7 +461,7 @@ body{
 .modal-card{ background:var(--card); border-radius:48px; width:88%; padding:54px;
   box-shadow:var(--shadow); }
 .modal-title{ font-size:52px; font-weight:700; text-align:center; margin-bottom:44px; }
-.backup-card{ max-height:80vh; display:flex; flex-direction:column; }
+.backup-card{ max-height:180vh; display:flex; flex-direction:column; }
 .backup-list{ overflow:auto; display:flex; flex-direction:column; gap:18px; padding:4px 0; }
 .backup-item{ border:3px solid var(--line); border-radius:30px; background:#fff; color:var(--ink);
   padding:24px 28px; font-size:36px; font-weight:700; line-height:1.25; text-align:left;
