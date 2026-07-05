@@ -51,9 +51,15 @@ function goTab(name){
   if(tab) tab.classList.add('on');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
-  topbar.style.display = name==='settings' ? 'none' : '';
+  // 统一使用 topbar 安全区：设置页简化内容，不隐藏
+  const isSettings = name==='settings';
+  topbar.classList.toggle('simple', isSettings);
+  document.getElementById('topbarTitle').style.display = isSettings ? '' : 'none';
+  document.getElementById('monthRow').style.display = isSettings ? 'none' : '';
+  document.querySelector('.summary').style.display = isSettings ? 'none' : '';
+  document.getElementById('eyeToggle').style.display = isSettings ? 'none' : '';
   setStatusBar(name);
-  if(name!=='settings') renderTop();   // 顶栏可见后重算金额字号（避免隐藏时量不到宽）
+  if(!isSettings) renderTop();
   if(name==='stats' && typeof restartTrendAnimations==='function') restartTrendAnimations();
   currentTab = name;
   restoreTabScroll(name);
@@ -103,13 +109,13 @@ if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App)
 /* 桌面/浏览器预览：Esc 等效返回键，方便测试 */
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') handleBack(); });
 
-/* App 内：状态栏不覆盖网页，颜色随页面变（避开刘海） */
+/* App 内：状态栏不覆盖网页，颜色始终跟随 topbar 蓝色（避开刘海） */
 function setStatusBar(name){
   const SB = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
   if(!SB) return;
   SB.setOverlaysWebView({ overlay:false }).catch(()=>{});
-  if(name==='settings'){ SB.setBackgroundColor({color:'#f4f5f7'}).catch(()=>{}); SB.setStyle({style:'LIGHT'}).catch(()=>{}); }
-  else { SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{}); SB.setStyle({style:'LIGHT'}).catch(()=>{}); }
+  SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{});
+  SB.setStyle({style:'LIGHT'}).catch(()=>{});
 }
 setStatusBar('list');
 

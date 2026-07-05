@@ -48,7 +48,9 @@ body{
 /* ---------- 主体滚动区 ---------- */
 .body{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .page{ display:none; padding:40px 50px 60px; }
-#page-settings{ padding-top:calc(var(--safe-top, 70px) + 20px); }
+/* topbar 简化模式（设置页）：只留标题栏，去掉月选择器和汇总卡 */
+.topbar.simple{ padding-bottom:30px; }
+.topbar-title{ display:none; font-size:46px;font-weight:700; }
 .page.active{ display:block; }
 
 /* ---------- 通用 ---------- */
