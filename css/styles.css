@@ -48,7 +48,7 @@ body{
 /* ---------- 主体滚动区 ---------- */
 .body{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .page{ display:none; padding:40px 50px 60px; }
-#page-settings{ padding-top:calc(var(--safe-top, 70px) + 30px); }
+#page-settings{ padding-top:100px; } /* 兜底值，JS (goTab) 会按真实状态栏高度覆盖 */
 .page.active{ display:block; }
 
 /* ---------- 通用 ---------- */

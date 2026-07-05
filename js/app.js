@@ -51,9 +51,16 @@ function goTab(name){
   if(tab) tab.classList.add('on');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
-  // 设置页隐藏 topbar，通过 --safe-top 变量适配刘海/状态栏
   const isSettings = name==='settings';
   topbar.style.display = isSettings ? 'none' : '';
+  // 设置页直接 JS 计算顶部安全区：用真实状态栏高度 ÷ 当前缩放比 → 设计画布像素
+  if(isSettings){
+    const s = window.innerWidth / 1200;
+    let statusBarPx = window.__statusBarHeight || 0;
+    if(!statusBarPx && window.visualViewport) statusBarPx = window.visualViewport.offsetTop;
+    if(!statusBarPx) statusBarPx = 24;
+    document.getElementById('page-settings').style.paddingTop = Math.round(statusBarPx / s + 40) + 'px';
+  }
   setStatusBar(name);
   if(!isSettings) renderTop();
   if(name==='stats' && typeof restartTrendAnimations==='function') restartTrendAnimations();
