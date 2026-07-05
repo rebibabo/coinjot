@@ -250,8 +250,8 @@ function renderBackupList(){
   const box = document.getElementById('backupList'); if(!box) return;
   box.innerHTML = backupChoices.map((b, i)=>`
     <button class="backup-item ${i===selectedBackupIndex?'on':''}" data-backup-i="${i}" type="button">
-      ${b.label || backupLabel(b.time)}
-      <div class="sub">${i+1} / ${backupChoices.length}${i===selectedBackupIndex?' · 当前选择':''}</div>
+      <span>${b.label || backupLabel(b.time)}</span>
+      <span class="sub">${i+1}/${backupChoices.length}${i===selectedBackupIndex?' · 当前选择':''}</span>
     </button>`).join('');
 }
 async function restoreBackupAt(index){
@@ -281,8 +281,8 @@ async function restoreLocal(){
   try{
     const meta = await ensureBackupMeta(FS);
     if(!meta.items.length){ showAlert('还没有本机备份，先点「一键备份到本机」'); return; }
-    backupChoices = meta.items.slice(-BK_KEEP);
-    selectedBackupIndex = backupChoices.length - 1;
+    backupChoices = meta.items.slice(-BK_KEEP).reverse();
+    selectedBackupIndex = 0;
     renderBackupList();
     document.getElementById('backupModal').classList.add('show');
   }catch(e){ showAlert('恢复失败：'+(e.message||e)); }
