@@ -48,13 +48,13 @@ body{
 /* ---------- 主体滚动区 ---------- */
 .body{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .page{ display:none; padding:40px 50px 60px; }
-#page-settings{ padding-top:150px; }
+#page-settings{ padding-top:calc(var(--safe-top, 70px) + 20px); }
 .page.active{ display:block; }
 
 /* ---------- 通用 ---------- */
 .card{ background:var(--card); border-radius:36px; box-shadow:var(--shadow); }
 .empty{ text-align:center; color:var(--sub); font-size:40px; padding:160px 0; }
-.page-title{ font-size:56px;font-weight:800;margin:0 6px 30px; }
+.page-title{ font-size:56px;font-weight:800;margin:0 6px 44px; }
 .sect-title{ font-size:50px;font-weight:800;margin:20px 6px 30px; display:flex;align-items:center;gap:18px; }
 .sect-help{ width:46px;height:46px;flex:none;border-radius:50%;background:#3c7dff;color:#fff;
   font-size:30px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;
@@ -457,6 +457,7 @@ body{
 /* ---------- 新建/编辑分类弹窗 ---------- */
 .modal{ position:absolute; inset:0; background:rgba(0,0,0,.4); z-index:80;
   display:none; align-items:center; justify-content:center; }
+#appDialog{ z-index:85; }
 .modal.show{ display:flex; }
 .modal-card{ background:var(--card); border-radius:48px; width:88%; padding:54px;
   box-shadow:var(--shadow); }

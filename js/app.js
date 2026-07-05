@@ -157,6 +157,9 @@ function fitStage(){
     stage.style.transformOrigin = 'top left';
     stage.style.left = '0'; stage.style.top = '0';
     stage.style.transform = `scale(${s})`;
+    // 状态栏安全区：转成设计画布像素，不同屏幕宽度自动适配
+    const statusBarDP = /iPhone|iPad/.test(navigator.userAgent) ? 47 : 24;
+    document.documentElement.style.setProperty('--safe-top', Math.round(statusBarDP / s) + 'px');
   }
   stage.style.visibility = 'visible';   // 缩放就位后再显示，消除开屏闪烁
 }
