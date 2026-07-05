@@ -107,6 +107,13 @@ jobs:
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                       window.setNavigationBarContrastEnforced(false);
                   }
+
+                  // Pass real status bar height to WebView for safe-area CSS
+                  int statusBarH = 0;
+                  int id = getResources().getIdentifier("status_bar_height", "dimen", "android");
+                  if (id > 0) statusBarH = getResources().getDimensionPixelSize(id);
+                  bridge.getWebView().evaluateJavascript(
+                      "window.__statusBarHeight=" + statusBarH + ";", null);
               }
           }
           EOF

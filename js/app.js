@@ -51,12 +51,9 @@ function goTab(name){
   if(tab) tab.classList.add('on');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
-  // 统一使用 topbar 安全区：设置页隐藏月选择器和汇总卡，显示「设置」标题
+  // 设置页隐藏 topbar，通过 --safe-top 变量适配刘海/状态栏
   const isSettings = name==='settings';
-  document.getElementById('monthRow').style.display = isSettings ? 'none' : '';
-  document.querySelectorAll('#sumBalance,#sumExpense,#sumIncome').forEach(el=>el.closest('.sum-card').style.display = isSettings ? 'none' : '');
-  document.getElementById('settingsTitle').style.display = isSettings ? '' : 'none';
-  document.getElementById('eyeToggle').style.display = isSettings ? 'none' : '';
+  topbar.style.display = isSettings ? 'none' : '';
   setStatusBar(name);
   if(!isSettings) renderTop();
   if(name==='stats' && typeof restartTrendAnimations==='function') restartTrendAnimations();
@@ -108,13 +105,13 @@ if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App)
 /* 桌面/浏览器预览：Esc 等效返回键，方便测试 */
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') handleBack(); });
 
-/* App 内：状态栏不覆盖网页，颜色始终跟随 topbar 蓝色（避开刘海） */
+/* App 内：状态栏不覆盖网页，颜色随页面变 */
 function setStatusBar(name){
   const SB = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
   if(!SB) return;
   SB.setOverlaysWebView({ overlay:false }).catch(()=>{});
-  SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{});
-  SB.setStyle({style:'LIGHT'}).catch(()=>{});
+  if(name==='settings'){ SB.setBackgroundColor({color:'#f4f5f7'}).catch(()=>{}); SB.setStyle({style:'DARK'}).catch(()=>{}); }
+  else { SB.setBackgroundColor({color:'#3c7dff'}).catch(()=>{}); SB.setStyle({style:'LIGHT'}).catch(()=>{}); }
 }
 setStatusBar('list');
 
@@ -163,8 +160,10 @@ function fitStage(){
     stage.style.left = '0'; stage.style.top = '0';
     stage.style.transform = `scale(${s})`;
     // 状态栏安全区：转成设计画布像素，不同屏幕宽度自动适配
-    const statusBarDP = /iPhone|iPad/.test(navigator.userAgent) ? 47 : 24;
-    document.documentElement.style.setProperty('--safe-top', Math.round(statusBarDP / s) + 'px');
+    let statusBarPx = window.__statusBarHeight || 0;
+    if(!statusBarPx && window.visualViewport) statusBarPx = window.visualViewport.offsetTop;
+    if(!statusBarPx) statusBarPx = /iPhone|iPad/.test(navigator.userAgent) ? 47 : 24;
+    document.documentElement.style.setProperty('--safe-top', Math.round(statusBarPx / s) + 'px');
   }
   stage.style.visibility = 'visible';   // 缩放就位后再显示，消除开屏闪烁
 }
