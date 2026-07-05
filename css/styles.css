@@ -34,8 +34,8 @@ body{
 }
 
 /* ---------- 顶部汇总卡 ---------- */
-.topbar{ padding:110px 60px 36px; padding-top:calc(110px + env(safe-area-inset-top,0px)); color:#fff; flex:none; background:#3c7dff; position:relative; }
-.eye-toggle{ position:absolute; top:calc(50px + env(safe-area-inset-top,0px)); right:50px; font-size:44px; line-height:1; cursor:pointer; opacity:.95; }
+.topbar{ padding:var(--topbar-pt, 80px) 60px 36px; color:#fff; flex:none; background:#3c7dff; position:relative; }
+.eye-toggle{ position:absolute; top:36px; right:50px; font-size:44px; line-height:1; cursor:pointer; opacity:.95; }
 .month-row{ display:flex; align-items:center; gap:24px; font-size:46px; font-weight:600; position:relative; }
 .month-row #monthLabel{ cursor:pointer; }
 .month-row .nav{ width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.18);
@@ -48,7 +48,7 @@ body{
 /* ---------- 主体滚动区 ---------- */
 .body{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .page{ display:none; padding:40px 50px 60px; }
-#page-settings{ padding-top:100px; } /* 兜底值，JS (goTab) 会按真实状态栏高度覆盖 */
+#page-settings{ padding-top:calc(40px + var(--safe-top-px, 60px)); } /* 兜底值，JS 会按真实状态栏高度覆盖 */
 .page.active{ display:block; }
 
 /* ---------- 通用 ---------- */
@@ -63,7 +63,7 @@ body{
 /* ---------- 内置教程帮助页（全屏可滚动） ---------- */
 .help-sheet{ position:absolute; inset:0; z-index:60; background:#f4f5f7; display:none; flex-direction:column; }
 .help-sheet.show{ display:flex; }
-.help-top{ flex:none; background:#3c7dff; color:#fff; padding:46px 40px 34px; display:flex; align-items:center; gap:28px; }
+.help-top{ flex:none; background:#3c7dff; color:#fff; padding:var(--help-top-pt, 46px) 40px 34px; display:flex; align-items:center; gap:28px; }
 .help-back{ font-size:40px; cursor:pointer; line-height:1; }
 .help-ttl{ font-size:44px; font-weight:700; }
 .help-body{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:36px 44px 140px; color:#222; font-size:34px; line-height:1.7; }
@@ -304,8 +304,8 @@ body{
 
 /* ---------- 底部 Tab ---------- */
 .tabbar{ flex:none; display:flex; background:var(--card);
-  height:calc(210px + env(safe-area-inset-bottom,0px)); padding:0; position:relative; z-index:1;
-  margin-top:-1px; padding-bottom:env(safe-area-inset-bottom,0px); }
+  height:calc(210px + var(--safe-bot-px, 0px)); padding:0; position:relative; z-index:1;
+  margin-top:-1px; padding-bottom:var(--safe-bot-px, 0px); }
 .tab{ flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;
   color:var(--sub);font-size:34px;cursor:pointer;justify-content:center;
   padding-bottom:36px; }

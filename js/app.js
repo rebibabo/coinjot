@@ -53,14 +53,7 @@ function goTab(name){
   document.getElementById('page-'+name).classList.add('active');
   const isSettings = name==='settings';
   topbar.style.display = isSettings ? 'none' : '';
-  // 设置页直接 JS 计算顶部安全区：用真实状态栏高度 ÷ 当前缩放比 → 设计画布像素
-  if(isSettings){
-    const s = window.innerWidth / 1200;
-    let statusBarPx = window.__statusBarHeight || 0;
-    if(!statusBarPx && window.visualViewport) statusBarPx = window.visualViewport.offsetTop;
-    if(!statusBarPx) statusBarPx = 24;
-    document.getElementById('page-settings').style.paddingTop = Math.round(statusBarPx / s + 40) + 'px';
-  }
+  if(isSettings) updateSettingsPadding();
   setStatusBar(name);
   if(!isSettings) renderTop();
   if(name==='stats' && typeof restartTrendAnimations==='function') restartTrendAnimations();
@@ -143,10 +136,57 @@ function showToast(msg, actLabel, actFn, ms=4000){
 }
 function hideToast(){ document.getElementById('toast').classList.remove('show'); }
 
-/* 缩放适配：
+/* ===== 缩放适配 + 安全区（刘海/灵动岛/底部指示条） =====
    手机竖屏 → 按宽度铺满整屏，高度按视口自适应（内部 flex 布局自动伸展）；
-   桌面/横向 → 居中等比缩放（letterbox），方便预览。 */
+   桌面/横向 → 居中等比缩放（letterbox），方便预览。
+   安全区通过 CSS env() + 原生注入综合获取，换算为设计画布像素后写入 CSS 变量。
+   所有元素（topbar / help-top / tabbar / 设置页）统一用这些变量消隐安全区。 */
 let baseH = 0;   // 没有键盘时的完整视口高度（键盘弹出会把 innerHeight 压小）
+let _cachedEnvInsets = null;  // 缓存 env(safe-area-inset-*) 的读取（不会变）
+
+/* 读取浏览器 CSS env(safe-area-inset-*) → {top, bottom} CSS 像素。
+   只在 overlay 模式下有值；overlay:false 时为 0。 */
+function readEnvInsets(){
+  if(_cachedEnvInsets) return _cachedEnvInsets;
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;opacity:0;' +
+    'padding-top:env(safe-area-inset-top,0px);' +
+    'padding-bottom:env(safe-area-inset-bottom,0px);';
+  document.body.appendChild(d);
+  const cs = getComputedStyle(d);
+  _cachedEnvInsets = {
+    top: parseInt(cs.paddingTop) || 0,
+    bottom: parseInt(cs.paddingBottom) || 0,
+  };
+  document.body.removeChild(d);
+  return _cachedEnvInsets;
+}
+
+/* 顶部安全区高度（CSS 像素）：优先从 env() 拿，没有则用原生注入，都没有则兜底 24 */
+function readTopSafePx(){
+  let px = readEnvInsets().top;
+  if(!px) px = window.__statusBarHeight || 0;
+  if(!px && window.visualViewport) px = window.visualViewport.offsetTop;
+  if(!px) px = 24;
+  return px;
+}
+
+/* 底部安全区高度（CSS 像素）：env(safe-area-inset-bottom) */
+function readBottomSafePx(){
+  return readEnvInsets().bottom;
+}
+
+/* 把安全区高度→设计画布像素（÷缩放比），写入 CSS 变量供各处使用 */
+function applySafeAreaVars(s){
+  const topDp = Math.round(readTopSafePx() / s);
+  const botDp = Math.round(readBottomSafePx() / s);
+  const root = document.documentElement;
+  root.style.setProperty('--safe-top-px', topDp + 'px');
+  root.style.setProperty('--safe-bot-px', botDp + 'px');
+  root.style.setProperty('--topbar-pt', (80 + topDp) + 'px');
+  root.style.setProperty('--help-top-pt', (46 + topDp) + 'px');
+}
+
 function fitStage(){
   const stage = document.getElementById('stage');
   const phone = document.querySelector('.phone');
@@ -160,35 +200,37 @@ function fitStage(){
     stage.style.transformOrigin = 'center center';
     stage.style.left = '50%'; stage.style.top = '50%';
     stage.style.transform = `translate(-50%,-50%) scale(${s})`;
+    // 横屏 letterbox：手机居中，顶部安全区不适用，清零
+    const root = document.documentElement;
+    root.style.setProperty('--safe-top-px', '0px');
+    root.style.setProperty('--safe-bot-px', '0px');
+    root.style.setProperty('--topbar-pt', '80px');
+    root.style.setProperty('--help-top-pt', '46px');
   } else {                             // 竖屏（手机）→ 按宽铺满，高度自适应
     const s = W/1200;
-    phone.style.width = '1200px'; phone.style.height = (effH/s) + 'px';
+    applySafeAreaVars(s);
+    // phone 撑满整个视口；安全区由各元素的 padding（CSS 变量）消化
+    phone.style.width = '1200px';
+    phone.style.height = (effH / s) + 'px';
     stage.style.transformOrigin = 'top left';
     stage.style.left = '0'; stage.style.top = '0';
     stage.style.transform = `scale(${s})`;
-    updateSettingsPadding();
   }
+  updateSettingsPadding();
   stage.style.visibility = 'visible';   // 缩放就位后再显示，消除开屏闪烁
-}
-/* 从原生层获取状态栏高度 → 转设计画布像素，适配刘海/水滴/普通屏 */
-function readStatusBarPx(){
-  let px = window.__statusBarHeight || 0;
-  if(!px && window.visualViewport) px = window.visualViewport.offsetTop;
-  if(!px) px = 24;
-  return px;
 }
 function updateSettingsPadding(){
   const page = document.getElementById('page-settings');
   if(!page || !page.classList.contains('active')) return;
   const s = window.innerWidth / 1200;
-  page.style.paddingTop = Math.round(readStatusBarPx() / s + 40) + 'px';
+  page.style.paddingTop = Math.round(readTopSafePx() / s + 40) + 'px';
 }
-// 原生 __statusBarHeight 可能在首帧之后才注入，轮询更新
-setTimeout(updateSettingsPadding, 300);
-setTimeout(updateSettingsPadding, 800);
-setTimeout(updateSettingsPadding, 2000);
-window.addEventListener('resize', fitStage);
-window.addEventListener('orientationchange', ()=>{ baseH = 0; setTimeout(fitStage, 100); });
+// 安全区变量可能在首帧 / 原生注入之后才到位，轮询补刀
+setTimeout(()=>{ applySafeAreaVars(window.innerWidth/1200); updateSettingsPadding(); }, 300);
+setTimeout(()=>{ applySafeAreaVars(window.innerWidth/1200); updateSettingsPadding(); }, 800);
+setTimeout(()=>{ applySafeAreaVars(window.innerWidth/1200); updateSettingsPadding(); }, 2000);
+window.addEventListener('resize', ()=>{ _cachedEnvInsets = null; fitStage(); });
+window.addEventListener('orientationchange', ()=>{ baseH = 0; _cachedEnvInsets = null; setTimeout(fitStage, 100); });
 
 /* 关闭所有输入框的拼写检查红线 / 自动填充建议（小人图标） */
 document.querySelectorAll('input:not([type=file]), textarea').forEach(el=>{
