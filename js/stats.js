@@ -75,8 +75,11 @@ function renderPiePanel(rows, total, us){
     </div></div>`;
 }
 function renderBarsPanel(rows, us){
+  const total = rows.reduce((s,r)=>s+r.amt,0);
   const bars = rows.map((r, idx)=>`<div class="bar-item" data-cat="${r.id}" style="--delay:${idx * 46}ms">
-      <div class="bar-top"><span>${r.c.icon} ${r.c.name}</span><span>${fmt(r.amt,us)}</span></div>
+      <div class="bar-top"><span class="bar-name">${r.c.icon} ${r.c.name}</span>
+        <span class="bar-nums"><span class="bar-pct">${(r.amt/total*100).toFixed(1)}%</span> ${fmt(r.amt,us)}</span>
+        <span class="bar-arrow">›</span></div>
       <div class="bar-track"><div class="bar-fill" style="--bar-w:${r.amt/rows[0].amt*100}%;width:var(--bar-w);background:${r.color}"></div></div>
     </div>`).join('');
   return `<div class="card bars-panel animating"><div class="bars-hint">点击查看该分类下的明细</div><div class="bars">${bars}</div></div>`;
@@ -106,15 +109,17 @@ function scaledDayHeights(days, maxBarHeight){
   });
   return heights;
 }
-function scaledDayHeight(total, max, maxBarHeight){
-  if(!total) return 3;
+function scaledDayRatio(total, max){
+  if(!total || !max) return 0;
   const exponent = 1 - dayTrendTemp * .7;
-  return Math.round(Math.pow(total / Math.max(1, max), exponent) * maxBarHeight) + 3;
+  return Math.pow(total / max, exponent);
 }
-function dayBarColor(total, max){
-  if(!total) return '#e7efff';
-  const t = Math.max(0, Math.min(1, total / Math.max(1, max)));
-  const mix = .18 + Math.pow(t, .72) * .82;
+function scaledDayHeight(total, max, maxBarHeight){
+  return total ? Math.round(scaledDayRatio(total, max) * maxBarHeight) + 3 : 3;
+}
+function dayBarColor(scaledRatio){
+  if(scaledRatio <= 0) return '#e7efff';
+  const mix = .18 + scaledRatio * .82;
   const lo = [159,189,255], hi = [60,125,255];
   const rgb = lo.map((v, i)=>Math.round(v + (hi[i] - v) * mix));
   return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
@@ -135,7 +140,7 @@ function updateDailyTrendScale(){
     const bar = el.querySelector('.tb-bar');
     if(bar){
       bar.style.height = h+'px';
-      bar.style.background = dayBarColor(totals[i], max);
+      bar.style.background = dayBarColor(scaledDayRatio(totals[i], max));
     }
   });
 }
@@ -190,7 +195,7 @@ function renderDailyTrend(){
         return `<div class="tb" data-day="${x.date}" data-total="${x.total}" style="--bar-h:${h}px;--delay:${delay}ms">
           <div class="tb-plot">
             <div class="tb-val">${x.total ? Math.round(x.total) : ''}</div>
-            <div class="tb-bar" style="height:${h}px;background:${dayBarColor(x.total, maxTotal)}"></div>
+            <div class="tb-bar" style="height:${h}px;background:${dayBarColor(scaledDayRatio(x.total, maxTotal))}"></div>
           </div>
           <div class="tb-lbl">${x.d}</div></div>`;
       }).join('')}</div></div>`;

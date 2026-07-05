@@ -245,7 +245,11 @@ body{
 .bars-hint{ padding:36px 50px 2px;color:var(--sub);font-size:34px;font-weight:400; }
 .bars{ padding:24px 50px 50px; }
 .bar-item{ margin-bottom:38px; }
-.bar-top{ display:flex;justify-content:space-between;font-size:38px;margin-bottom:14px; }
+.bar-top{ display:flex;align-items:baseline;gap:16px;font-size:38px;margin-bottom:14px; }
+.bar-name{ flex:none; }
+.bar-nums{ margin-left:auto; text-align:right; white-space:nowrap; }
+.bar-pct{ font-size:30px; color:var(--sub); margin-right:8px; }
+.bar-arrow{ flex:none; font-size:34px; color:var(--sub); margin-left:4px; }
 .bar-track{ height:30px;background:#eef0f4;border-radius:999px;overflow:hidden; }
 .bar-fill{ height:100%;border-radius:999px;transition:width .4s; }
 .bars-panel.animating .bar-item{ animation:statRowIn .34s ease both; animation-delay:var(--delay,0ms); }
@@ -298,8 +302,8 @@ body{
 
 /* ---------- 底部 Tab ---------- */
 .tabbar{ flex:none; display:flex; background:var(--card);
-  height:210px; padding:0; position:relative; z-index:1;
-  margin-top:-1px; }
+  height:calc(210px + env(safe-area-inset-bottom,0px)); padding:0; position:relative; z-index:1;
+  margin-top:-1px; padding-bottom:env(safe-area-inset-bottom,0px); }
 .tab{ flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;
   color:var(--sub);font-size:34px;cursor:pointer;justify-content:center;
   padding-bottom:36px; }
