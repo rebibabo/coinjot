@@ -5,10 +5,12 @@
    https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@2024-03-06/v1/currencies/cny.json
    返回 { date, cny:{ usd:0.14, ... } }，即「1 元 = 多少外币」。 */
 function rateUrl(date){
-  return `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${date}/v1/currencies/cny.json`;
+  const version = date === 'latest' ? 'latest' : date;
+  return `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${version}/v1/currencies/cny.json`;
 }
 function rateFallbackUrl(date){
-  return `https://${date}.currency-api.pages.dev/v1/currencies/cny.json`;
+  const version = date === 'latest' ? 'latest' : date;
+  return `https://${version}.currency-api.pages.dev/v1/currencies/cny.json`;
 }
 const pendingRateDates = new Set();
 
@@ -106,7 +108,7 @@ async function updateRates(force){
   const btn = document.getElementById('btnUpdateRate');
   if(force){ btn.style.pointerEvents='none'; document.getElementById('rateStatus').textContent='更新中…'; }
   try{
-    await fetchRateForDate(today(), force);
+    await fetchRateForDate('latest', force);
     refreshRateStatus(); renderAll();
     return true;
   }catch(err){
@@ -119,23 +121,39 @@ async function updateRates(force){
 }
 
 async function fetchRateForDate(date, force){
-  const d = rateDate(date);
-  if(!force && rateDays[d] && rateDays[d].map) return true;
+  const isLatest = date === 'latest';
+  const d = isLatest ? 'latest' : rateDate(date);
+
+  if(!force && !isLatest && rateDays[d] && rateDays[d].map) return true;
   if(pendingRateDates.has(d)) return false;
+
   pendingRateDates.add(d);
   try{
     let res = await fetch(rateUrl(d));
     if(!res.ok) res = await fetch(rateFallbackUrl(d));
-    if(!res.ok) throw new Error('HTTP '+res.status);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+
     const data = await res.json();
-    const bucket = { date: data.date || d, map: data.cny || {} };
-    rateDays[d] = bucket;
-    localStorage.setItem(LS_RATE_DAYS, JSON.stringify(rateDays));
-    if(d===today()){
+    const realDate = data.date || (isLatest ? today() : d);
+    const bucket = { date: realDate, map: data.cny || {} };
+
+    // 按接口真实日期缓存
+    rateDays[realDate] = bucket;
+
+    // latest / 今日更新时，同时更新当前汇率
+    if(isLatest){
       rates = bucket;
       localStorage.setItem(LS_RATES, JSON.stringify(rates));
-      refreshRateStatus();
+
+      // 把今天也映射到这份汇率，避免今天消费记录提示缺汇率
+      rateDays[today()] = bucket;
+    }else{
+      rateDays[d] = bucket;
     }
+
+    localStorage.setItem(LS_RATE_DAYS, JSON.stringify(rateDays));
+
+    refreshRateStatus();
     renderAll();
     return true;
   }finally{
