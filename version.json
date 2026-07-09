@@ -1,6 +1,6 @@
 {
-  "versionCode": 12,
-  "versionName": "1.1.0",
+  "versionCode": 13,
+  "versionName": "1.1.1",
   "apkUrl": "https://gitee.com/yuan-zhongsheng/coinjot/releases/download/latest/coinjot.apk",
-  "notes": "1.1.0 大版本更新\n- 统计页重构为饼状图、柱状图、月度趋势三类视图\n- 新增日度支出趋势：半月分段、缩放系数、金额深浅配色和点击跳转明细\n- 优化饼状图多选、清除选择、图例联动和动画效果\n- 明细筛选新增日期范围，非本币金额显示人民币换算\n- 历史外币金额按记账当天汇率重新计算并按日缓存\n- 本机备份升级为最近 10 份滑动窗口，可按时间选择恢复、删除备份\n- 连续增删改自动备份并弹出完成提示\n- 优化底部导航、状态栏/安全区和系统导航栏显示，减少黑线和遮挡问题\n- 支持非 release 云端构建 APK artifact，方便先安装测试"
+  "notes": "汇率改用 latest 版本号避免 404；AI 识别备注保留原文+未知实体归其他"
 }
