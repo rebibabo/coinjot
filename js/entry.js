@@ -4,9 +4,14 @@ const sheetInner=sheet.querySelector('.sheet-inner');
 const curBtn=document.getElementById('curBtn');
 const aiCurSlot=document.getElementById('aiCurSlot');
 const curInlineSlot=document.getElementById('curInlineSlot');
-const LS_LASTCUR='et_lastcur';
+const LS_LASTCUR='et_lastcur', LS_TPL='et_entry_templates';
 let entryType='expense', entryCat=null, amtStr='0', entryDate=today(), entryCur='cny';
 let editingId=null;   // null=新增，否则=正在编辑的记录 id
+let entryTemplates = load(LS_TPL, []);
+if(!Array.isArray(entryTemplates)) entryTemplates = [];
+window.entryTemplates = entryTemplates;
+let tplSaveOn = false;
+const tplSaveBtn = document.getElementById('tplSave');
 
 function placeCurBtn(inAiRow){
   (inAiRow ? aiCurSlot : curInlineSlot).appendChild(curBtn);
@@ -49,6 +54,7 @@ function openSheet(rec){
   editingId = rec ? rec.id : null;
   sheetInner.classList.toggle('editing', !!rec);
   placeCurBtn(!rec);
+  setTemplateSaveOn(false);
   if(rec){
     entryDate = rec.date.slice(0,10);
     entryCur = rec.currency || 'cny';
@@ -108,6 +114,136 @@ function highlightCat(){
   document.querySelectorAll('#catGrid .cat-cell').forEach(c=>
     c.classList.toggle('on', c.dataset.cid===entryCat));
 }
+
+/* 记账模板：保存分类/金额/币种/备注，下次一键回填后可再调整金额 */
+function saveEntryTemplates(){
+  entryTemplates = entryTemplates.slice(0, 100);
+  window.entryTemplates = entryTemplates;
+  localStorage.setItem(LS_TPL, JSON.stringify(entryTemplates));
+}
+function setEntryTemplates(list){
+  entryTemplates = Array.isArray(list) ? list.filter(t=>t && t.categoryId).slice(0, 100) : [];
+  saveEntryTemplates();
+}
+window.setEntryTemplates = setEntryTemplates;
+function fallbackCatId(type){
+  const arr = cats[type] || [];
+  return (arr.find(isOther) || arr[0] || {}).id || null;
+}
+function normalizeTemplate(t){
+  const type = t.type==='income' ? 'income' : 'expense';
+  const exists = (cats[type] || []).some(c=>c.id===t.categoryId);
+  const curExists = currencies.some(c=>c.code===(t.currency || 'cny'));
+  return {
+    id:t.id || ('tpl'+Date.now()+Math.random().toString(36).slice(2,6)),
+    type,
+    categoryId:exists ? t.categoryId : fallbackCatId(type),
+    amount:Math.round(Number(t.amount || 0)*100)/100,
+    currency:curExists ? (t.currency || 'cny') : 'cny',
+    note:String(t.note || '').slice(0,30),
+    updatedAt:t.updatedAt || Date.now()
+  };
+}
+function templateKey(t){
+  return [t.type, t.categoryId, t.currency, t.note.trim()].join('|');
+}
+function templateTitle(t){
+  const c = catById(t.type, t.categoryId);
+  return (t.note ? t.note : c.name);
+}
+function renderTemplateList(){
+  const box = document.getElementById('tplList');
+  if(!box) return;
+  if(!entryTemplates.length){
+    box.innerHTML = '<div class="tpl-empty">还没有模板<br>先打开「存为模板」，提交一笔</div>';
+    return;
+  }
+  box.innerHTML = entryTemplates.map(t=>{
+    const nt = normalizeTemplate(t), c = catById(nt.type, nt.categoryId), cur = curInfo(nt.currency);
+    return `<div class="tpl-item" data-tpl="${nt.id}">
+      <div class="tpl-icon" style="background:${c.color}22;color:${c.color}">${c.icon}</div>
+      <div class="tpl-main">
+        <div class="tpl-title">${esc(templateTitle(nt))}</div>
+        <div class="tpl-sub">${nt.type==='expense'?'支出':'收入'} · ${esc(c.name)} · ${esc(cur.name)}</div>
+      </div>
+      <div class="tpl-amt">${fmt(nt.amount, cur.symbol)}</div>
+      <span class="bk-del" data-tpl-del="${nt.id}">✕</span>
+    </div>`;
+  }).join('');
+}
+function renderTemplateSaveToggle(){
+  if(!tplSaveBtn) return;
+  tplSaveBtn.classList.toggle('on', tplSaveOn);
+  tplSaveBtn.textContent = tplSaveOn ? '存模板：开' : '存模板：关';
+}
+function setTemplateSaveOn(on){
+  tplSaveOn = !!on;
+  renderTemplateSaveToggle();
+}
+window.entryTemplateSaveEnabled = ()=>tplSaveOn;
+function openTemplateModal(){
+  document.getElementById('aiInput')?.blur();
+  document.getElementById('noteIn')?.blur();
+  renderTemplateList();
+  document.getElementById('tplModal').classList.add('show');
+}
+function closeTemplateModal(){ document.getElementById('tplModal').classList.remove('show'); }
+function saveTemplateFromEntry(data, silent){
+  const val = Math.round(Number(data ? data.amount : evalAmt())*100)/100;
+  const categoryId = data ? data.categoryId : entryCat;
+  if(!val || val<=0){ if(!silent) showAlert('先填写模板金额'); return false; }
+  if(!categoryId){ if(!silent) showAlert('请选择分类'); return false; }
+  const tpl = normalizeTemplate({
+    type:data ? data.type : entryType,
+    amount:val,
+    categoryId,
+    note:data ? (data.note || '') : document.getElementById('noteIn').value.trim(),
+    currency:data ? (data.currency || 'cny') : entryCur,
+    updatedAt:Date.now()
+  });
+  const key = templateKey(tpl);
+  entryTemplates = [tpl, ...entryTemplates.filter(t=>templateKey(normalizeTemplate(t))!==key)];
+  saveEntryTemplates();
+  if(!silent) showToast('已保存模板');
+  return true;
+}
+window.saveTemplateFromEntry = saveTemplateFromEntry;
+function applyTemplate(tpl){
+  const t = normalizeTemplate(tpl);
+  setType(t.type);
+  entryCat = t.categoryId || fallbackCatId(t.type);
+  highlightCat();
+  entryCur = t.currency;
+  amtStr = String(t.amount || 0);
+  document.getElementById('noteIn').value = t.note || '';
+  localStorage.setItem(LS_LASTCUR, entryCur);
+  updateCurBtn();
+  updateAmt();
+  closeTemplateModal();
+  showToast('已套用模板');
+}
+document.getElementById('tplOpen').onclick = openTemplateModal;
+tplSaveBtn.onclick = ()=>{
+  setTemplateSaveOn(!tplSaveOn);
+  showToast(tplSaveOn ? '提交时会保存模板' : '已关闭保存模板');
+};
+document.getElementById('tplCancel').onclick = closeTemplateModal;
+document.getElementById('tplModal').onclick = e=>{ if(e.target.id==='tplModal') closeTemplateModal(); };
+document.getElementById('tplList').onclick = e=>{
+  const del = e.target.closest('[data-tpl-del]');
+  if(del){
+    e.stopPropagation();
+    entryTemplates = entryTemplates.filter(t=>t.id!==del.dataset.tplDel);
+    saveEntryTemplates();
+    renderTemplateList();
+    showToast('已删除模板');
+    return;
+  }
+  const row = e.target.closest('[data-tpl]');
+  if(!row) return;
+  const tpl = entryTemplates.find(t=>t.id===row.dataset.tpl);
+  if(tpl) applyTemplate(tpl);
+};
 
 /* 金额键盘 —— 支持 + / − 简单运算 */
 document.querySelectorAll('.keypad .key').forEach(k=>{
@@ -193,6 +329,8 @@ function commitEntry(){
   if(!val || val<=0){ showAlert('请输入金额'); return; }
   if(!entryCat){ showAlert('请选择分类'); return; }
   const note = document.getElementById('noteIn').value.trim();
+  const wasEditing = !!editingId;
+  let templateSaved = false;
   if(editingId){
     // 编辑：更新原记录，保留原有的时间部分
     const rec = records.find(r=>r.id===editingId);
@@ -206,6 +344,8 @@ function commitEntry(){
       type:entryType, amount:val, categoryId:entryCat, note, currency:entryCur, date:iso, createdAt:Date.now() });
     localStorage.setItem(LS_LASTCUR, entryCur);   // 下次新记账默认沿用
   }
+  if(tplSaveOn) templateSaved = saveTemplateFromEntry({ type:entryType, amount:val, categoryId:entryCat, note, currency:entryCur }, true);
+  setTemplateSaveOn(false);
   save();
   if(window.noteRecordChanged) noteRecordChanged();
   // 跳到该笔所在月份
@@ -215,8 +355,9 @@ function commitEntry(){
   renderAll();
   if(!editingId && contMode){          // 连续记账：清空金额/备注，保留分类/日期/币种，弹层不关
     amtStr='0'; document.getElementById('noteIn').value=''; updateAmt();
-    showToast('已记一笔 · 继续');
+    showToast(templateSaved ? '已记一笔 · 已存模板 · 继续' : '已记一笔 · 继续');
   } else {
     closeSheet();
+    if(templateSaved) showToast(wasEditing ? '已保存 · 已存模板' : '已记一笔 · 已存模板');
   }
 }

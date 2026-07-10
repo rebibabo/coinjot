@@ -191,6 +191,10 @@
           <button id="aiBtn">识别</button>
         </div>
         <div class="ai-hint">一句话记账：点输入框输入，想语音就用键盘上的 🎤；也可手动选分类</div>
+        <div class="tpl-bar">
+          <button class="tpl-btn" id="tplOpen" type="button">模板</button>
+          <button class="tpl-btn save" id="tplSave" type="button">存模板：关</button>
+        </div>
         <div class="cat-grid" id="catGrid"></div>
         <div class="amt-bar">
           <input class="note-in" id="noteIn" placeholder="点此写备注…" maxlength="30">
@@ -389,6 +393,16 @@
         <div class="modal-btns">
           <button class="mb cancel" id="cmCancel">取消</button>
           <button class="mb ok" id="cmSave">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="tplModal">
+      <div class="modal-card tpl-card">
+        <div class="modal-title">记账模板</div>
+        <div class="tpl-list" id="tplList"></div>
+        <div class="modal-btns">
+          <button class="mb cancel" id="tplCancel">关闭</button>
         </div>
       </div>
     </div>

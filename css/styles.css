@@ -370,6 +370,11 @@ body{
 .amt-inline-slot .show-amt{ font-size:64px;font-weight:700;min-width:180px;text-align:right; }
 .amt-conv{ text-align:right; padding:6px 50px 0; font-size:32px; color:var(--sub); }
 .amt-conv:empty{ display:none; }
+.tpl-bar{ display:flex; gap:18px; padding:18px 50px 0; }
+.tpl-btn{ flex:1; border:none; border-radius:22px; background:#eef0f4; color:var(--ink);
+  font-size:36px; font-weight:600; padding:20px 24px; cursor:pointer; }
+.tpl-btn.save{ color:var(--ink); background:#eef0f4; }
+.tpl-btn.save.on{ color:#fff; background:var(--accent); box-shadow:0 8px 18px rgba(60,125,255,.22); }
 .keypad{ display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--line);
   padding-bottom:40px; }
 .key{ background:var(--card);height:150px;display:flex;align-items:center;justify-content:center;
@@ -473,6 +478,18 @@ body{
   width:52px;height:52px;display:flex;align-items:center;justify-content:center;
   border-radius:50%; background:#f1f2f6; cursor:pointer; }
 .bk-del:hover{ background:#ff5a5f; color:#fff; }
+.tpl-card{ max-height:150vh; display:flex; flex-direction:column; }
+.tpl-list{ overflow:auto; display:flex; flex-direction:column; gap:18px; padding:4px 0; }
+.tpl-empty{ color:var(--sub); font-size:36px; text-align:center; padding:80px 0; }
+.tpl-item{ border:3px solid var(--line); border-radius:30px; background:#fff; color:var(--ink);
+  padding:24px 28px; display:flex; align-items:center; gap:22px; text-align:left; cursor:pointer; }
+.tpl-item:active{ background:#f6f8fc; }
+.tpl-icon{ flex:none; width:86px; height:86px; border-radius:24px; display:flex; align-items:center;
+  justify-content:center; font-size:46px; }
+.tpl-main{ flex:1; min-width:0; }
+.tpl-title{ font-size:38px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tpl-sub{ margin-top:8px; font-size:30px; color:var(--sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tpl-amt{ flex:none; font-size:38px; font-weight:700; color:var(--accent); }
 .ce-row{ display:flex; align-items:center; gap:28px; margin-bottom:30px; }
 .ce-icon{ width:140px;height:140px;flex:none;border-radius:34px;background:#f1f2f6;
   display:flex;align-items:center;justify-content:center;font-size:76px; }

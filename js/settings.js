@@ -22,13 +22,14 @@ document.getElementById('page-settings').addEventListener('click', e=>{
 function editCategory(type, id){ openCatModal({mode:'edit', type, id}); }
 function addCategory(type){      openCatModal({mode:'add',  type}); }
 
-/* 完整备份对象（记录/分类/币种/统计单位/AI 配置） */
+/* 完整备份对象（记录/分类/币种/统计单位/AI 配置/记账模板） */
 function backupData(){
   const now = new Date();
   return {
     backupTime:now.toISOString(),
     backupTimeText:fmtDateTime(now),
     v:2, records, cats, currencies, statUnit,
+    entryTemplates:window.entryTemplates || [],
     ai:{ profiles:aiProfiles, activeId:aiActiveId, activeModel:aiActiveModel },
     prefs:{
       et_cont: localStorage.getItem('et_cont'),
@@ -44,6 +45,7 @@ function applyBackup(d){
   if(d.cats) cats = d.cats;
   if(Array.isArray(d.currencies) && d.currencies.length) currencies = d.currencies;
   if(d.statUnit){ statUnit = d.statUnit; localStorage.setItem(LS_UNIT, statUnit); }
+  if(typeof window.setEntryTemplates==='function') window.setEntryTemplates(d.entryTemplates || []);
   if(d.ai && Array.isArray(d.ai.profiles) && d.ai.profiles.length){
     aiProfiles = d.ai.profiles.map(normProfile);
     aiActiveId = aiProfiles.some(p=>p.id===d.ai.activeId) ? d.ai.activeId : aiProfiles[0].id;

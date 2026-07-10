@@ -198,25 +198,31 @@ async function runAI(){
 /* 多笔：用当前弹层的日期/币种直接批量记录 */
 function saveMultiple(arr){
   const iso = entryDate + 'T' + new Date().toTimeString().slice(0,8);
-  let n=0;
+  const saveTpl = window.entryTemplateSaveEnabled && window.entryTemplateSaveEnabled();
+  let n=0, tplN=0;
   arr.forEach(r=>{
     const amt = Math.round(Number(r.amount)*100)/100;
     if(!(amt>0 && isFinite(amt))) return;
     const type = r.type==='income' ? 'income' : 'expense';
     const cat = findCategory(type, r.category)
              || cats[type].find(c=>c.id===(type==='expense'?'other_e':'other_i')) || cats[type][0];
+    const note = (r.note||'').slice(0,30);
     records.push({ id:'r'+Date.now()+Math.random().toString(36).slice(2,6),
-      type, amount:amt, categoryId:cat.id, note:(r.note||'').slice(0,30),
+      type, amount:amt, categoryId:cat.id, note,
       currency:entryCur, date:iso, createdAt:Date.now() });
+    if(saveTpl && window.saveTemplateFromEntry){
+      if(window.saveTemplateFromEntry({ type, amount:amt, categoryId:cat.id, note, currency:entryCur }, true)) tplN++;
+    }
     n++;
   });
   if(!n){ showAlert('没识别出有效金额。\n把金额说清楚试试，例如「打车 35」「午饭 25」。', '没记成'); return; }
+  if(typeof setTemplateSaveOn==='function') setTemplateSaveOn(false);
   save();
   if(window.noteRecordChanged) noteRecordChanged(n);
   const [jy,jm] = entryDate.split('-').map(Number); viewYear=jy; viewMonth=jm-1;
   clearStatSelection();
   aiInput.value=''; renderAll(); closeSheet();
-  showToast(`已记 ${n} 笔`);
+  showToast(tplN ? `已记 ${n} 笔 · 已存 ${tplN} 个模板` : `已记 ${n} 笔`);
 }
 
 /* ---- 调用大模型，抽取一笔账（紧凑分隔格式，比 JSON 更快） ----
