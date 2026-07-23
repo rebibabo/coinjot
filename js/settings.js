@@ -6,9 +6,43 @@ function renderCatEditors(){
         <span class="x" data-rmcat="${type}:${c.id}">×</span></div>`).join('')
       + `<div class="cat-chip add" data-addcat="${type}">＋ 添加</div>`;
   });
+  renderDefaultCatEditors();
+  renderAiDefaultCatSwitch();
 }
+function renderDefaultCatEditors(){
+  ['expense','income'].forEach(type=>{
+    const current = getDefaultCat(type);
+    const label = document.getElementById(type==='expense'?'defaultExpenseCatLabel':'defaultIncomeCatLabel');
+    const curCat = current ? catById(type, current) : null;
+    label.textContent = (curCat ? `${curCat.icon} ${curCat.name}` : '未设置') + ' ›';
+  });
+}
+function renderAiDefaultCatSwitch(){
+  const sw = document.getElementById('aiDefaultCatSw');
+  if(sw) sw.classList.toggle('on', aiDefaultCatOn);
+}
+const defaultCatModal = document.getElementById('defaultCatModal');
+let defaultCatPickType = 'expense';
+function openDefaultCatPicker(type){
+  defaultCatPickType = type;
+  const current = getDefaultCat(type);
+  document.getElementById('defaultCatTitle').textContent = type==='expense' ? '默认支出分类' : '默认收入分类';
+  document.getElementById('defaultCatList').innerHTML =
+    `<div class="cat-chip${current?'':' on'}" data-defaultcat="">不设置</div>` +
+    cats[type].map(c=>`<div class="cat-chip${current===c.id?' on':''}" data-defaultcat="${c.id}">${c.icon} ${c.name}</div>`).join('');
+  defaultCatModal.classList.add('show');
+}
+function closeDefaultCatPicker(){ defaultCatModal.classList.remove('show'); }
 
 document.getElementById('page-settings').addEventListener('click', e=>{
+  if(e.target.closest('#rowAiDefaultCat')){
+    setAiDefaultCatOn(!aiDefaultCatOn);
+    renderAiDefaultCatSwitch();
+    showToast(aiDefaultCatOn ? 'AI 将优先用默认分类' : 'AI 将自行判断分类');
+    return;
+  }
+  const defRow = e.target.closest('[data-open-defaultcat]');
+  if(defRow){ openDefaultCatPicker(defRow.getAttribute('data-open-defaultcat')); return; }
   const rm = e.target.closest('[data-rmcat]');
   if(rm){ const [type,id]=rm.dataset.rmcat.split(':');
     if(cats[type].length<=1){ showAlert('至少保留一个分类'); return; }
@@ -18,23 +52,36 @@ document.getElementById('page-settings').addEventListener('click', e=>{
   const add = e.target.closest('[data-addcat]');
   if(add){ addCategory(add.dataset.addcat); }
 });
+defaultCatModal.onclick = e=>{
+  if(e.target===defaultCatModal){ closeDefaultCatPicker(); return; }
+  const def = e.target.closest('[data-defaultcat]');
+  if(!def) return;
+  const id = def.dataset.defaultcat || null;
+  setDefaultCat(defaultCatPickType, id);
+  renderDefaultCatEditors();
+  closeDefaultCatPicker();
+  showToast(id ? '已设置默认分类' : '已取消默认分类');
+};
+document.getElementById('defaultCatCancel').onclick = closeDefaultCatPicker;
 
 function editCategory(type, id){ openCatModal({mode:'edit', type, id}); }
 function addCategory(type){      openCatModal({mode:'add',  type}); }
 
-/* 完整备份对象（记录/分类/币种/统计单位/AI 配置/记账模板） */
+/* 完整备份对象（记录/分类/币种/统计单位/AI 配置/记账模板/默认分类） */
 function backupData(){
   const now = new Date();
   return {
     backupTime:now.toISOString(),
     backupTimeText:fmtDateTime(now),
-    v:2, records, cats, currencies, statUnit,
+    v:2, records, cats, currencies, statUnit, defaultCats,
     entryTemplates:window.entryTemplates || [],
     ai:{ profiles:aiProfiles, activeId:aiActiveId, activeModel:aiActiveModel },
     prefs:{
       et_cont: localStorage.getItem('et_cont'),
       et_privacy: localStorage.getItem('et_privacy'),
-      et_autofocus: localStorage.getItem('et_autofocus')
+      et_autofocus: localStorage.getItem('et_autofocus'),
+      et_default_cats: localStorage.getItem(LS_DEFAULT_CAT),
+      et_ai_default_cat: localStorage.getItem(LS_AI_DEFAULT_CAT)
     },
     exportedAt:now.toISOString()
   };
@@ -43,6 +90,11 @@ function backupData(){
 function applyBackup(d){
   records = d.records;
   if(d.cats) cats = d.cats;
+  if(d.defaultCats) defaultCats = d.defaultCats;
+  else if(d.prefs && d.prefs.et_default_cats){
+    try{ defaultCats = JSON.parse(d.prefs.et_default_cats); }catch(e){ defaultCats = {expense:null, income:null}; }
+  }
+  normalizeDefaultCats();
   if(Array.isArray(d.currencies) && d.currencies.length) currencies = d.currencies;
   if(d.statUnit){ statUnit = d.statUnit; localStorage.setItem(LS_UNIT, statUnit); }
   if(typeof window.setEntryTemplates==='function') window.setEntryTemplates(d.entryTemplates || []);
@@ -53,11 +105,12 @@ function applyBackup(d){
     saveProfiles();
   }
   if(d.prefs){   // 还原开关类偏好，并刷新对应 UI
-    for(const k of ['et_cont','et_privacy','et_autofocus']){
+    for(const k of ['et_cont','et_privacy','et_autofocus','et_ai_default_cat']){
       if(d.prefs[k]!=null) localStorage.setItem(k, d.prefs[k]);
     }
     if(typeof contMode!=='undefined'){ contMode = localStorage.getItem('et_cont')==='1'; renderContToggle(); }
     if(typeof autoFocus!=='undefined'){ autoFocus = localStorage.getItem('et_autofocus')!=='0'; renderAutoFocusSw(); }
+    if(typeof aiDefaultCatOn!=='undefined'){ aiDefaultCatOn = localStorage.getItem(LS_AI_DEFAULT_CAT)!=='0'; renderAiDefaultCatSwitch(); }
     if(typeof privacyOn!=='undefined'){ privacyOn = localStorage.getItem('et_privacy')==='1'; renderEye(); }
   }
   save(); saveCur();
@@ -353,7 +406,7 @@ document.getElementById('importFile').onchange=e=>{
 document.getElementById('btnClear').onclick=async ()=>{
   if(await showConfirm('确定清空所有记账数据？\n清空前会自动备份到本机（可随时恢复）')){
     await backupLocal();   // 先自动备份到本机，防手滑
-    records=[]; cats=JSON.parse(JSON.stringify(DEFAULT_CATS)); save(); renderCatEditors(); renderAll();
+    records=[]; cats=JSON.parse(JSON.stringify(DEFAULT_CATS)); normalizeDefaultCats(); save(); renderCatEditors(); renderAll();
     showToast('已清空 · 已自动备份到本机');
   }
 };
@@ -396,6 +449,7 @@ cpick.onclick = e=>{
     const {type, id} = pendingDel, target = t.dataset.mergeto;
     let changed = 0;
     records.forEach(r=>{ if(r.type===type && r.categoryId===id){ r.categoryId=target; changed++; } });
+    if(getDefaultCat(type)===id) setDefaultCat(type, target);
     cats[type] = cats[type].filter(c=>c.id!==id);
     save(); if(changed) noteRecordChanged(changed); renderCatEditors(); renderAll();
     cpick.classList.remove('show'); pendingDel=null;

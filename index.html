@@ -83,6 +83,11 @@
         </div>
         <div class="sect-title">分类管理</div>
         <div class="card set-group">
+          <div class="set-row" id="rowAiDefaultCat">AI 优先用默认分类
+            <span class="set-switch" id="aiDefaultCatSw"><i></i></span>
+          </div>
+          <div class="set-row btn" data-open-defaultcat="expense">默认支出分类<span class="arrow" id="defaultExpenseCatLabel">未设置 ›</span></div>
+          <div class="set-row btn" data-open-defaultcat="income">默认收入分类<span class="arrow" id="defaultIncomeCatLabel">未设置 ›</span></div>
           <div class="set-row">支出分类</div>
           <div class="cat-edit" id="editExpenseCats"></div>
           <div class="set-row">收入分类</div>
@@ -211,11 +216,13 @@
           <div class="key">7</div><div class="key">8</div><div class="key">9</div>
           <div class="key op" data-op="del">⌫</div>
           <div class="key">4</div><div class="key">5</div><div class="key">6</div>
-          <div class="key op" data-op="plus">+</div>
+          <div class="key op" data-op="div">÷</div>
           <div class="key">1</div><div class="key">2</div><div class="key">3</div>
-          <div class="key op" data-op="minus">−</div>
+          <div class="key op" data-op="mul">×</div>
           <div class="key">.</div><div class="key">0</div>
-          <div class="key op" data-op="clear">C</div>
+          <div class="key op" data-op="plus">+</div>
+          <div class="key op" data-op="minus">−</div>
+          <div class="key op clear" data-op="clear">C</div>
           <div class="key save" id="keySave">完成</div>
         </div>
       </div>
@@ -393,6 +400,16 @@
         <div class="modal-btns">
           <button class="mb cancel" id="cmCancel">取消</button>
           <button class="mb ok" id="cmSave">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="defaultCatModal">
+      <div class="modal-card default-cat-card">
+        <div class="modal-title" id="defaultCatTitle">选择默认分类</div>
+        <div class="default-cat-list" id="defaultCatList"></div>
+        <div class="modal-btns">
+          <button class="mb cancel" id="defaultCatCancel">关闭</button>
         </div>
       </div>
     </div>

@@ -290,7 +290,9 @@ body{
   border-radius:999px;padding:22px 34px;font-size:38px; }
 .cat-chip .x{ color:var(--sub);font-size:42px;cursor:pointer;margin-left:6px; }
 .cat-chip.add{ background:#e8f0ff;color:var(--accent);cursor:pointer; }
+.cat-chip.on{ background:#e8f0ff;color:var(--accent);font-weight:700;box-shadow:0 0 0 3px #cfe0ff inset; }
 .cat-chip[data-editcat]{ cursor:pointer; }
+.cat-chip[data-defaultcat]{ cursor:pointer; }
 #cpickGrid .cat-chip{ cursor:pointer; }
 #cpickGrid{ flex-wrap:wrap; max-height:1400px; overflow-y:auto; }
 
@@ -377,11 +379,12 @@ body{
 .tpl-btn.save.on{ color:#fff; background:var(--accent); box-shadow:0 8px 18px rgba(60,125,255,.22); }
 .keypad{ display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--line);
   padding-bottom:40px; }
-.key{ background:var(--card);height:150px;display:flex;align-items:center;justify-content:center;
+.key{ background:var(--card);height:132px;display:flex;align-items:center;justify-content:center;
   font-size:60px;cursor:pointer;user-select:none; }
 .key:active{ background:#f0f1f4; }
 .key.op{ color:var(--accent); }
-.key.save{ background:var(--accent);color:#fff;font-size:48px;grid-row:span 2; }
+.key.op.clear{ color:var(--muted); }
+.key.save{ background:var(--accent);color:#fff;font-size:48px;grid-column:span 3; }
 .key.save.income{ background:var(--income); }
 
 /* ---------- AI 智能记账输入栏 ---------- */
@@ -467,6 +470,8 @@ body{
 .modal-card{ background:var(--card); border-radius:48px; width:88%; padding:54px;
   box-shadow:var(--shadow); }
 .modal-title{ font-size:52px; font-weight:700; text-align:center; margin-bottom:44px; }
+.default-cat-card{ max-height:150vh; display:flex; flex-direction:column; }
+.default-cat-list{ display:flex; flex-wrap:wrap; gap:24px; overflow:auto; padding:4px; }
 .backup-card{ max-height:180vh; display:flex; flex-direction:column; }
 .backup-list{ overflow:auto; display:flex; flex-direction:column; gap:18px; padding:4px 0; }
 .backup-item{ border:3px solid var(--line); border-radius:30px; background:#fff; color:var(--ink);

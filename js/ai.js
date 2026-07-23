@@ -204,8 +204,7 @@ function saveMultiple(arr){
     const amt = Math.round(Number(r.amount)*100)/100;
     if(!(amt>0 && isFinite(amt))) return;
     const type = r.type==='income' ? 'income' : 'expense';
-    const cat = findCategory(type, r.category)
-             || cats[type].find(c=>c.id===(type==='expense'?'other_e':'other_i')) || cats[type][0];
+    const cat = pickAiCategory(type, r.category);
     const note = (r.note||'').slice(0,30);
     records.push({ id:'r'+Date.now()+Math.random().toString(36).slice(2,6),
       type, amount:amt, categoryId:cat.id, note,
@@ -268,7 +267,8 @@ function parseLines(t){
 /* 解析校验：金额必须是正数，分类必须能对上某个已有分类 */
 function validEntry(r){
   const amt = Number(r.amount);
-  return amt>0 && isFinite(amt) && findCategory(r.type, r.category)!=null;
+  const hasDefault = aiDefaultCatOn && !!getDefaultCat(r.type);
+  return amt>0 && isFinite(amt) && (hasDefault || findCategory(r.type, r.category)!=null);
 }
 
 /* 解析 "支/收<>amount<>category<>note"（按位置取值，缺省留空；不含日期） */
@@ -344,14 +344,19 @@ function findCategory(type, name){
   }
   return bestScore>=0.5 ? best : null;
 }
+function pickAiCategory(type, name){
+  const defId = aiDefaultCatOn ? getDefaultCat(type) : null;
+  return (defId ? cats[type].find(c=>c.id===defId) : null)
+      || findCategory(type, name)
+      || cats[type].find(c=>c.id===(type==='expense'?'other_e':'other_i'))
+      || cats[type][0];
+}
 
 /* ---- 把解析结果填进手动表单（日期保持弹层当前值，默认今天） ---- */
 function applyAIResult(r){
   const type = r.type==='income' ? 'income' : 'expense';
   setType(type);   // 重建分类网格并默认选中第一个
-  const match = findCategory(type, r.category)
-             || cats[type].find(c=>c.id===(type==='expense'?'other_e':'other_i'))
-             || cats[type][0];
+  const match = pickAiCategory(type, r.category);
   if(match){ entryCat = match.id; highlightCat(); }
   const amt = Math.round(Number(r.amount)*100)/100;
   amtStr = (amt>0 && isFinite(amt)) ? String(amt) : '0';

@@ -1,6 +1,6 @@
 {
-  "versionCode": 13,
-  "versionName": "1.1.1",
+  "versionCode": 14,
+  "versionName": "1.1.2",
   "apkUrl": "https://gitee.com/yuan-zhongsheng/coinjot/releases/download/latest/coinjot.apk",
-  "notes": "汇率改用 latest 版本号避免 404；AI 识别备注保留原文+未知实体归其他"
+  "notes": "新增金额计算器乘除；新增默认分类与 AI 优先默认分类开关；默认分类支持备份恢复；隐私模式下日度支出金额由四点改为两点"
 }

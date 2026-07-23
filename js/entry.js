@@ -104,7 +104,7 @@ function renderCatGrid(){
   grid.innerHTML=cats[entryType].map(c=>`<div class="cat-cell" data-cid="${c.id}">
     <div class="cc-ico" style="background:${c.color}22;color:${c.color}">${c.icon}</div>
     <div class="cc-nm">${c.name}</div></div>`).join('');
-  entryCat = cats[entryType][0]?.id || null;
+  entryCat = getDefaultCat(entryType) || cats[entryType][0]?.id || null;
   highlightCat();
   grid.querySelectorAll('.cat-cell').forEach(cell=>{
     cell.onclick=()=>{ entryCat=cell.dataset.cid; highlightCat(); };
@@ -245,15 +245,19 @@ document.getElementById('tplList').onclick = e=>{
   if(tpl) applyTemplate(tpl);
 };
 
-/* 金额键盘 —— 支持 + / − 简单运算 */
+/* 金额键盘 —— 支持 + / − / × / ÷ 简单运算 */
 document.querySelectorAll('.keypad .key').forEach(k=>{
   k.onclick=()=>{
     if(k.id==='keySave'){ commitEntry(); return; }
     const op=k.dataset.op;
     if(op==='del'){ amtStr=amtStr.length>1?amtStr.slice(0,-1):'0'; }
     else if(op==='clear'){ amtStr='0'; }
-    else if(op==='plus'||op==='minus'){
-      amtStr=evalAmt(); if(!/[+\-]$/.test(amtStr)) amtStr+= (op==='plus'?'+':'-');
+    else if(op==='plus'||op==='minus'||op==='mul'||op==='div'){
+      const sign = { plus:'+', minus:'-', mul:'×', div:'÷' }[op];
+      const current = evalAmt();
+      if((op==='mul'||op==='div') && (!Number.isFinite(Number(current)) || Number(current)===0)) return;
+      amtStr = current;
+      if(!/[+\-×÷]$/.test(amtStr)) amtStr += sign;
     }
     else { // 数字或小数点
       const ch=k.textContent;
@@ -263,11 +267,18 @@ document.querySelectorAll('.keypad .key').forEach(k=>{
     updateAmt();
   };
 });
-function lastSeg(s){ return s.split(/[+\-]/).pop(); }
+function lastSeg(s){ return s.split(/[+\-×÷]/).pop(); }
 function evalAmt(){
-  let s=amtStr.replace(/[+\-]$/,'');
-  try{ if(/[+\-]/.test(s)){ const v=Function('return '+s)(); return String(Math.round(v*100)/100); } }catch(e){}
-  return s;
+  const hasOp = /[+\-×÷]/.test(amtStr);
+  const raw = amtStr.replace(/[+\-×÷]$/,'') || '0';
+  const expr = raw.replace(/×/g,'*').replace(/÷/g,'/');
+  try{
+    if(/[+\-*/]/.test(expr)){
+      const v=Function('return '+expr)();
+      if(Number.isFinite(v)) return String(Math.round(v*100)/100);
+    }
+  }catch(e){}
+  return hasOp && /[+\-*/]/.test(expr) ? '0' : raw;
 }
 function updateAmt(){
   document.getElementById('showAmt').textContent = amtStr;

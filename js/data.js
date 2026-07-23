@@ -1,6 +1,7 @@
 /* =================== 数据层 + 视图状态 + 通用工具 ===================
    全局变量/函数供其它模块共用，本文件最先加载。 */
-const LS_REC = 'et_records', LS_CAT = 'et_categories';
+const LS_REC = 'et_records', LS_CAT = 'et_categories', LS_DEFAULT_CAT = 'et_default_cats';
+const LS_AI_DEFAULT_CAT = 'et_ai_default_cat';
 const DEFAULT_CATS = {
   expense: [
     {id:'food',   name:'餐饮', icon:'🍜', color:'#ff7a59'},
@@ -21,6 +22,8 @@ const DEFAULT_CATS = {
 };
 let records = load(LS_REC, []);
 let cats = load(LS_CAT, null) || JSON.parse(JSON.stringify(DEFAULT_CATS));
+let defaultCats = load(LS_DEFAULT_CAT, null) || {expense:null, income:null};
+let aiDefaultCatOn = localStorage.getItem(LS_AI_DEFAULT_CAT)!=='0';
 
 function load(k, def){ try{ const v=JSON.parse(localStorage.getItem(k)); return v==null?def:v; }catch(e){ return def; } }
 /* 「其他」永远排到该类型末尾 */
@@ -32,7 +35,25 @@ function normalizeCatOrder(){
   });
 }
 normalizeCatOrder();
+function saveDefaultCats(){ localStorage.setItem(LS_DEFAULT_CAT, JSON.stringify(defaultCats)); }
+function getDefaultCat(type){
+  const id = defaultCats && defaultCats[type];
+  return (cats[type] || []).some(c=>c.id===id) ? id : null;
+}
+function setDefaultCat(type, id){
+  defaultCats[type] = id && (cats[type] || []).some(c=>c.id===id) ? id : null;
+  saveDefaultCats();
+}
+function normalizeDefaultCats(){
+  ['expense','income'].forEach(type=>{ if(defaultCats[type] && !getDefaultCat(type)) defaultCats[type]=null; });
+  saveDefaultCats();
+}
+function setAiDefaultCatOn(on){
+  aiDefaultCatOn = !!on;
+  localStorage.setItem(LS_AI_DEFAULT_CAT, aiDefaultCatOn ? '1' : '0');
+}
 function save(){ normalizeCatOrder();
+                 normalizeDefaultCats();
                  localStorage.setItem(LS_REC, JSON.stringify(records));
                  localStorage.setItem(LS_CAT, JSON.stringify(cats)); }
 function catById(type,id){ return cats[type].find(c=>c.id===id) || {name:'未分类',icon:'❓',color:'#9aa0ad'}; }
