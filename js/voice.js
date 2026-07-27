@@ -5,6 +5,7 @@ const LS_VOICE_CONFIG = 'et_voice_xfyun';
 const XFYUN_HOST = 'iat-api.xfyun.cn';
 const XFYUN_PATH = '/v2/iat';
 const XFYUN_RATE = 16000;
+const VOICE_CONFIG_VERSION = 2;
 const DEFAULT_VOICE_CONFIG = normalizeVoiceConfig(window.XFYUN_DEFAULT_CONFIG);
 
 let voiceConfig = loadVoiceConfig();
@@ -39,7 +40,7 @@ function loadVoiceConfig(){
   try{
     const v = JSON.parse(localStorage.getItem(LS_VOICE_CONFIG) || '{}');
     const saved = normalizeVoiceConfig(v);
-    if(v.custom===true && isCompleteVoiceConfig(saved)) return saved;
+    if(v.custom===true && v.version===VOICE_CONFIG_VERSION && isCompleteVoiceConfig(saved)) return saved;
     if(isCompleteVoiceConfig(DEFAULT_VOICE_CONFIG)) return {...DEFAULT_VOICE_CONFIG};
     return isCompleteVoiceConfig(saved) ? saved : {...DEFAULT_VOICE_CONFIG};
   }catch(e){ return {...DEFAULT_VOICE_CONFIG}; }
@@ -49,7 +50,9 @@ function setVoiceConfig(v){
   const next = normalizeVoiceConfig(v);
   if(isCompleteVoiceConfig(next)){
     voiceConfig = next;
-    localStorage.setItem(LS_VOICE_CONFIG, JSON.stringify({...voiceConfig, custom:true}));
+    localStorage.setItem(LS_VOICE_CONFIG, JSON.stringify({
+      ...voiceConfig, custom:true, version:VOICE_CONFIG_VERSION
+    }));
   }else{
     localStorage.removeItem(LS_VOICE_CONFIG);
     voiceConfig = {...DEFAULT_VOICE_CONFIG};
@@ -184,9 +187,17 @@ async function startVoiceListening(options={}){
     voiceSocket = new WebSocket(url);
     voiceSocket.onopen = beginVoiceCapture;
     voiceSocket.onmessage = handleVoiceMessage;
-    voiceSocket.onerror = ()=>voiceFail('连接讯飞失败，请检查网络');
-    voiceSocket.onclose = ()=>{
-      if(voiceState!=='idle' && voiceState!=='processing') voiceFail('语音连接已断开');
+    voiceSocket.onerror = ()=>{
+      if(typeof logError==='function') logError('讯飞 WebSocket 连接错误', 'voice');
+    };
+    voiceSocket.onclose = event=>{
+      if(typeof logError==='function'){
+        logError(`讯飞 WebSocket 关闭：code=${event.code || 0} reason=${event.reason || '无'}`, 'voice');
+      }
+      if(voiceState!=='idle' && voiceState!=='processing'){
+        const code = event.code && event.code!==1005 ? `（${event.code}）` : '';
+        voiceFail(`讯飞连接已断开${code}，请检查语音配置或网络`);
+      }
     };
     voiceStopTimer = setTimeout(()=>stopVoiceListening(), 60000);
   }catch(err){
@@ -485,25 +496,53 @@ bindPressGesture(voiceBtn, {
 });
 
 let quickHoldStarted = false;
-bindPressGesture(tabAdd, {
-  onTap:()=>openSheet(),
-  onHoldStart:()=>{
+let quickHoldTimer = null;
+let quickPointerId = null;
+let suppressPlusClick = false;
+tabAdd.onclick = event=>{
+  if(suppressPlusClick){
+    suppressPlusClick = false;
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+  openSheet();
+};
+tabAdd.oncontextmenu = event=>event.preventDefault();
+tabAdd.addEventListener('pointerdown', event=>{
+  if(quickPointerId!==null || (event.button!=null && event.button!==0)) return;
+  quickPointerId = event.pointerId;
+  quickHoldStarted = false;
+  try{ tabAdd.setPointerCapture(quickPointerId); }catch(_){}
+  quickHoldTimer = setTimeout(()=>{
     if(voiceState!=='idle') return;
     quickHoldStarted = true;
+    suppressPlusClick = true;
+    if(navigator.vibrate) navigator.vibrate(28);
     tabAdd.classList.add('voice-hold');
     startVoiceListening({mode:'quick'});
-  },
-  onHoldEnd:()=>{
-    tabAdd.classList.remove('voice-hold');
-    if(!quickHoldStarted) return;
+  }, 420);
+});
+tabAdd.addEventListener('pointerup', event=>{
+  if(event.pointerId!==quickPointerId) return;
+  clearTimeout(quickHoldTimer);
+  try{ tabAdd.releasePointerCapture(quickPointerId); }catch(_){}
+  quickPointerId = null;
+  tabAdd.classList.remove('voice-hold');
+  if(quickHoldStarted){
     quickHoldStarted = false;
     stopVoiceListening();
-  },
-  onHoldCancel:()=>{
-    quickHoldStarted = false;
-    tabAdd.classList.remove('voice-hold');
-    cancelVoiceListening();
+    setTimeout(()=>{ suppressPlusClick = false; }, 800);
   }
+});
+tabAdd.addEventListener('pointercancel', event=>{
+  if(event.pointerId!==quickPointerId) return;
+  clearTimeout(quickHoldTimer);
+  quickPointerId = null;
+  if(quickHoldStarted) cancelVoiceListening();
+  quickHoldStarted = false;
+  suppressPlusClick = false;
+  tabAdd.classList.remove('voice-hold');
 });
 
 document.getElementById('quickVoiceClose').onclick = ()=>{

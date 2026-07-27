@@ -25,10 +25,12 @@ const voiceDefaultsFile = path.join(root, 'js', 'voice-defaults.js');
 const voiceDefaults = {
   appId:process.env.SPEECHREC_APPID || process.env.XFYUN_APP_ID
     || localEnv.SPEECHREC_APPID || localEnv.XFYUN_APP_ID || '',
-  apiKey:process.env.SPEECHREC_APIKEY || process.env.XFYUN_API_KEY
-    || localEnv.SPEECHREC_APIKEY || localEnv.XFYUN_API_KEY || '',
-  apiSecret:process.env.SPEECHREC_SECRETKEY || process.env.XFYUN_API_SECRET
-    || localEnv.SPEECHREC_SECRETKEY || localEnv.XFYUN_API_SECRET || ''
+  // 当前 SPEECHREC 命名沿用项目约定：SECRETKEY 对应讯飞 APIKey，
+  // APIKEY 对应讯飞 APISecret；XFYUN_* 则保持官方字段名。
+  apiKey:process.env.SPEECHREC_SECRETKEY || process.env.XFYUN_API_KEY
+    || localEnv.SPEECHREC_SECRETKEY || localEnv.XFYUN_API_KEY || '',
+  apiSecret:process.env.SPEECHREC_APIKEY || process.env.XFYUN_API_SECRET
+    || localEnv.SPEECHREC_APIKEY || localEnv.XFYUN_API_SECRET || ''
 };
 const hasVoiceDefaults = voiceDefaults.appId && voiceDefaults.apiKey && voiceDefaults.apiSecret;
 if(hasVoiceDefaults || !fs.existsSync(voiceDefaultsFile)){

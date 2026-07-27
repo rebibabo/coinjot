@@ -48,6 +48,8 @@ function renderAutoFocusSw(){ if(autoFocusSw) autoFocusSw.classList.toggle('on',
 if(autoFocusSw) autoFocusSw.onclick=()=>{ autoFocus=!autoFocus; localStorage.setItem('et_autofocus', autoFocus?'1':'0'); renderAutoFocusSw(); };
 renderAutoFocusSw();
 
+/* 基础点击独立保留；voice.js 加载后只在此基础上增强长按快捷语音。 */
+document.getElementById('tabAdd').onclick=()=>openSheet();
 /* 传入 rec 进入编辑模式（预填该记录），不传则为新增 */
 function openSheet(rec){
   editingId = rec ? rec.id : null;
