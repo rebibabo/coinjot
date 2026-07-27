@@ -1,5 +1,6 @@
 # 密钥与本地环境
 .env
+js/voice-defaults.js
 .claude/
 
 # 依赖与构建产物（CI 会重新生成）

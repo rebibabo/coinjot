@@ -8,6 +8,7 @@
 <link rel="icon" href="resources/icon.svg">
 <link rel="apple-touch-icon" href="resources/icon.svg">
 <link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/voice.css">
 </head>
 <body>
 <div id="stage">
@@ -70,6 +71,7 @@
         <div class="sect-title">AI 智能记账<span class="sect-help" id="helpBtn" title="如何申请免费额度">?</span></div>
         <div class="card set-group">
           <div id="aiProfileList"></div>
+          <div class="set-row btn" id="btnVoiceConfig">讯飞语音听写<span class="arrow" id="voiceConfigLabel">未配置 ›</span></div>
           <div class="set-row" id="rowAutoFocus">点 + 自动聚焦语音输入
             <span class="set-switch" id="autoFocusSw"><i></i></span>
           </div>
@@ -148,6 +150,27 @@
     <!-- 轻提示（撤销/记账反馈） -->
     <div class="toast" id="toast"></div>
 
+    <!-- 长按 + 快捷语音记账 -->
+    <div class="quick-voice" id="quickVoice" aria-live="polite">
+      <div class="quick-voice-card">
+        <button class="quick-voice-close" id="quickVoiceClose" type="button" aria-label="取消快捷语音">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18"></path>
+          </svg>
+        </button>
+        <div class="quick-voice-orbit">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Z"></path>
+            <path d="M19 11v1a7 7 0 0 1-14 0v-1M12 19v3M8 22h8"></path>
+          </svg>
+        </div>
+        <div class="quick-voice-title" id="quickVoiceTitle">正在准备语音输入</div>
+        <div class="quick-voice-text" id="quickVoiceText">请说出金额和用途</div>
+        <div class="quick-voice-hint" id="quickVoiceHint">松开后自动识别并记账</div>
+        <button class="quick-voice-edit" id="quickVoiceEdit" type="button">打开记账页</button>
+      </div>
+    </div>
+
     <!-- 底部 Tab -->
     <div class="tabbar">
       <div class="tab on" data-tab="list"><div class="ti">
@@ -193,9 +216,17 @@
         <div class="ai-bar">
           <input id="aiInput" placeholder="✨ 一句话记账：今天打车35">
           <div class="ai-cur-slot" id="aiCurSlot"></div>
+          <button class="mic" id="voiceBtn" type="button" title="语音输入" aria-label="语音输入">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Z"></path>
+              <path d="M19 11v1a7 7 0 0 1-14 0v-1"></path>
+              <path d="M12 19v3"></path>
+              <path d="M8 22h8"></path>
+            </svg>
+          </button>
           <button id="aiBtn">识别</button>
         </div>
-        <div class="ai-hint">一句话记账：点输入框输入，想语音就用键盘上的 🎤；也可手动选分类</div>
+        <div class="ai-hint" id="voiceHint">点按持续听写，再点停止；也可按住说话、松开停止</div>
         <div class="tpl-bar">
           <button class="tpl-btn" id="tplOpen" type="button">模板</button>
           <button class="tpl-btn save" id="tplSave" type="button">存模板：关</button>
@@ -328,6 +359,29 @@
       </div>
     </div>
 
+    <!-- 讯飞语音听写配置：凭据只保存在本机 -->
+    <div class="modal" id="voiceModal">
+      <div class="modal-card voice-config-card">
+        <div class="modal-title">讯飞语音听写</div>
+        <div class="voice-config-note">WebSocket 流式识别，凭据仅保存在本机</div>
+        <div class="am-label">APPID</div>
+        <input class="am-in" id="voiceAppId" placeholder="填写 APPID" autocomplete="off" spellcheck="false">
+        <div class="am-label">APIKey</div>
+        <input class="am-in" id="voiceApiKey" type="password" placeholder="填写 APIKey" autocomplete="new-password" spellcheck="false">
+        <div class="am-label">APISecret</div>
+        <input class="am-in" id="voiceApiSecret" type="password" placeholder="填写 APISecret" autocomplete="new-password" spellcheck="false">
+        <label class="voice-secret-toggle">
+          <input type="checkbox" id="voiceShowSecret">
+          <span>显示密钥</span>
+        </label>
+        <div class="modal-btns">
+          <button class="mb cancel" id="voiceCancel">取消</button>
+          <button class="mb del" id="voiceClear">清除</button>
+          <button class="mb ok" id="voiceSave">保存</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 申请免费 AI 额度教程（App 内置，离线可看） -->
     <div class="help-sheet" id="helpSheet">
       <div class="help-top">
@@ -456,6 +510,8 @@
 <script src="js/currency.js"></script>
 <script src="js/entry.js"></script>
 <script src="js/ai.js"></script>
+<script src="js/voice-defaults.js"></script>
+<script src="js/voice.js"></script>
 <script src="js/app.js"></script>
 <script src="js/update.js"></script>
 </body>

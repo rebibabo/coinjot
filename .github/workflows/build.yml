@@ -54,6 +54,10 @@ jobs:
 
       - name: Build web (www/)
         run: node build-www.js
+        env:
+          SPEECHREC_APPID: ${{ secrets.SPEECHREC_APPID }}
+          SPEECHREC_APIKEY: ${{ secrets.SPEECHREC_APIKEY }}
+          SPEECHREC_SECRETKEY: ${{ secrets.SPEECHREC_SECRETKEY }}
 
       - name: Add Android platform
         run: npx cap add android
@@ -129,6 +133,10 @@ jobs:
 
       - name: Add install-packages permission (应用内更新唤起安装器)
         run: sed -i 's#<application#<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>\n    <application#' android/app/src/main/AndroidManifest.xml
+
+      - name: Add microphone permissions (讯飞流式语音听写)
+        run: |
+          sed -i 's#<application#<uses-permission android:name="android.permission.RECORD_AUDIO"/>\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>\n    <application#' android/app/src/main/AndroidManifest.xml
 
       - name: Generate app icon & splash
         continue-on-error: true

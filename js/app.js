@@ -79,13 +79,16 @@ document.getElementById('helpBtn').onclick = openHelp;
 document.getElementById('helpBack').onclick = closeHelp;
 
 /* ===== 返回键：逐层关闭弹层 → 回明细 → 退出 ===== */
-const BACK_LAYERS = ['appDialog','updModal','catModal','defaultCatModal','aiModal','rateModal','backupModal','curModal','tplModal','dpick','filterModal','mpick','cpick','sheet','helpSheet','logSheet'];
+const BACK_LAYERS = ['appDialog','updModal','catModal','defaultCatModal','aiModal','voiceModal','rateModal','backupModal','curModal','tplModal','dpick','filterModal','mpick','cpick','quickVoice','sheet','helpSheet','logSheet'];
 function handleBack(){
   for(const id of BACK_LAYERS){
     const el = document.getElementById(id);
     if(el && el.classList.contains('show')){
       if(id==='helpSheet') closeHelp();
       else if(id==='appDialog') _settleDlg(false);
+      else if(id==='voiceModal') closeVoiceConfig();
+      else if(id==='quickVoice'){ cancelVoiceListening(); hideQuickVoice(); }
+      else if(id==='sheet') closeSheet();
       else el.classList.remove('show');
       return true;
     }
@@ -244,6 +247,7 @@ document.querySelectorAll('input:not([type=file]), textarea').forEach(el=>{
 renderCatEditors();
 renderCurEditors();
 renderAiProfiles();
+renderVoiceSettings();
 renderAll();
 fitStage();
 updateRates();   // 每天首次打开自动拉取汇率（当天已更新则跳过）

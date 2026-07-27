@@ -48,7 +48,6 @@ function renderAutoFocusSw(){ if(autoFocusSw) autoFocusSw.classList.toggle('on',
 if(autoFocusSw) autoFocusSw.onclick=()=>{ autoFocus=!autoFocus; localStorage.setItem('et_autofocus', autoFocus?'1':'0'); renderAutoFocusSw(); };
 renderAutoFocusSw();
 
-document.getElementById('tabAdd').onclick=()=>openSheet();
 /* 传入 rec 进入编辑模式（预填该记录），不传则为新增 */
 function openSheet(rec){
   editingId = rec ? rec.id : null;
@@ -75,7 +74,10 @@ function openSheet(rec){
     if(ai) setTimeout(()=>{ ai.focus(); }, 250);   // 待弹层动画就位再聚焦，键盘才稳定弹出
   }
 }
-function closeSheet(){ sheet.classList.remove('show'); }
+function closeSheet(){
+  if(sheet.classList.contains('show') && typeof cancelVoiceListening==='function') cancelVoiceListening();
+  sheet.classList.remove('show');
+}
 sheet.onclick=e=>{ if(e.target===sheet) closeSheet(); };
 
 document.getElementById('sheetDel').onclick=()=>{

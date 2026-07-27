@@ -175,24 +175,42 @@ document.getElementById('amDel').onclick = ()=>{
 /* ---- 语音/文字输入触发 ---- */
 const aiBtn = document.getElementById('aiBtn');
 const aiInput = document.getElementById('aiInput');
-aiBtn.onclick = runAI;
+aiBtn.onclick = ()=>runAI();
 aiInput.addEventListener('keydown', e=>{ if(e.key==='Enter') runAI(); });
 
-async function runAI(){
+async function runAI(options={}){
+  const quick = options.quick===true;
   const text = aiInput.value.trim();
-  if(!text) return;
-  if(!getKey()){ showAlert('请先到「我的 → AI 智能记账」添加/选择一个带 key 的配置'); return; }
-  aiBtn.disabled = true;
-  aiBtn.innerHTML = '<span class="spin"></span>';
+  if(!text) return false;
+  if(!getKey()){
+    showAlert('请先到「我的 → AI 智能记账」添加/选择一个带 key 的配置');
+    return false;
+  }
+  if(!quick){
+    aiBtn.disabled = true;
+    aiBtn.innerHTML = '<span class="spin"></span>';
+  }
   try{
     const arr = await callLLM(text);
-    saveMultiple(arr);                                 // 单笔/多笔都直接入账，不再填表复核
+    return saveMultiple(arr)>0;                        // 单笔/多笔都直接入账，不再填表复核
   }catch(err){
     showAlert('识别失败，请检查网络或 AI 配置。\n' + (err.message || err), '识别失败');
+    return false;
   }finally{
-    aiBtn.disabled = false;
-    aiBtn.textContent = '识别';
+    if(!quick){
+      aiBtn.disabled = false;
+      aiBtn.textContent = '识别';
+    }
   }
+}
+
+/* 长按底部 +：使用今天和上次币种，不打开弹层，语音结束后直接记账。 */
+async function runQuickVoiceAI(text){
+  aiInput.value = String(text || '').trim();
+  entryDate = today();
+  entryCur = lastCur();
+  if(typeof setTemplateSaveOn==='function') setTemplateSaveOn(false);
+  return runAI({quick:true});
 }
 
 /* 多笔：用当前弹层的日期/币种直接批量记录 */
@@ -214,7 +232,10 @@ function saveMultiple(arr){
     }
     n++;
   });
-  if(!n){ showAlert('没识别出有效金额。\n把金额说清楚试试，例如「打车 35」「午饭 25」。', '没记成'); return; }
+  if(!n){
+    showAlert('没识别出有效金额。\n把金额说清楚试试，例如「打车 35」「午饭 25」。', '没记成');
+    return 0;
+  }
   if(typeof setTemplateSaveOn==='function') setTemplateSaveOn(false);
   save();
   if(window.noteRecordChanged) noteRecordChanged(n);
@@ -222,6 +243,7 @@ function saveMultiple(arr){
   clearStatSelection();
   aiInput.value=''; renderAll(); closeSheet();
   showToast(tplN ? `已记 ${n} 笔 · 已存 ${tplN} 个模板` : `已记 ${n} 笔`);
+  return n;
 }
 
 /* ---- 调用大模型，抽取一笔账（紧凑分隔格式，比 JSON 更快） ----

@@ -1,0 +1,193 @@
+/* 讯飞流式语音识别：配置、按住说话与快捷记账 */
+.voice-config-card{ max-height:180vh; overflow-y:auto; }
+.voice-config-note{
+  margin:-18px 0 32px;
+  padding:22px 26px;
+  border-radius:20px;
+  background:#f3f5f8;
+  color:var(--sub);
+  font-size:30px;
+  line-height:1.45;
+  text-align:center;
+}
+.voice-secret-toggle{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  margin-top:18px;
+  color:var(--sub);
+  font-size:32px;
+  cursor:pointer;
+}
+.voice-secret-toggle input{ width:34px; height:34px; accent-color:var(--accent); }
+
+.ai-bar .mic{
+  position:relative;
+  isolation:isolate;
+  width:100px;
+  height:100px;
+  padding:0;
+  border:3px solid #dfe5f2;
+  border-radius:50%;
+  background:#f2f5fa;
+  color:var(--accent);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  touch-action:none;
+  -webkit-user-select:none;
+  user-select:none;
+}
+.ai-bar .mic svg{
+  position:relative;
+  z-index:2;
+  width:52px;
+  height:52px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.ai-bar .mic.connecting{ opacity:.65; }
+.ai-bar .mic.listening{
+  color:#fff;
+  background:var(--expense);
+  border-color:var(--expense);
+}
+.ai-bar .mic.listening::before,
+.ai-bar .mic.listening::after,
+#tabAdd.voice-hold::before,
+#tabAdd.voice-hold::after,
+.quick-voice.listening .quick-voice-orbit::before,
+.quick-voice.listening .quick-voice-orbit::after{
+  content:'';
+  position:absolute;
+  inset:-10px;
+  border:5px solid rgba(255,90,95,.42);
+  border-radius:50%;
+  pointer-events:none;
+  animation:voiceHalo 1.45s ease-out infinite;
+}
+.ai-bar .mic.listening::after,
+#tabAdd.voice-hold::after,
+.quick-voice.listening .quick-voice-orbit::after{ animation-delay:.7s; }
+@keyframes voiceHalo{
+  0%{ opacity:.75; transform:scale(.82); }
+  100%{ opacity:0; transform:scale(1.48); }
+}
+.ai-bar .mic.processing{
+  color:#fff;
+  background:var(--accent);
+  border-color:var(--accent);
+}
+.ai-hint.voice-active{ color:var(--accent); }
+.ai-hint.voice-error{ color:var(--expense); }
+
+#tabAdd{ touch-action:none; -webkit-user-select:none; user-select:none; }
+#tabAdd.voice-hold{ z-index:3; }
+#tabAdd.voice-hold::before,
+#tabAdd.voice-hold::after{
+  inset:auto;
+  left:calc(50% - 76px);
+  top:calc(50% - 111px);
+  width:142px;
+  height:142px;
+  border-color:rgba(60,125,255,.38);
+}
+
+.quick-voice{
+  position:absolute;
+  inset:0;
+  z-index:75;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:80px;
+  background:rgba(25,28,36,.34);
+}
+.quick-voice.show{ display:flex; }
+.quick-voice-card{
+  position:relative;
+  width:880px;
+  padding:68px 64px 58px;
+  border-radius:36px;
+  background:#fff;
+  box-shadow:0 24px 80px rgba(25,28,36,.22);
+  text-align:center;
+}
+.quick-voice-close{
+  position:absolute;
+  top:26px;
+  right:26px;
+  width:72px;
+  height:72px;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:var(--sub);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.quick-voice-close svg{
+  width:42px;
+  height:42px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+}
+.quick-voice-orbit{
+  position:relative;
+  width:156px;
+  height:156px;
+  margin:4px auto 42px;
+  border-radius:50%;
+  background:var(--accent);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.quick-voice-orbit svg{
+  position:relative;
+  z-index:2;
+  width:72px;
+  height:72px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.quick-voice.listening .quick-voice-orbit{ background:var(--expense); }
+.quick-voice.processing .quick-voice-orbit{ background:var(--accent); }
+.quick-voice.success .quick-voice-orbit{ background:var(--income); }
+.quick-voice.error .quick-voice-orbit{ background:var(--expense); }
+.quick-voice-title{ font-size:42px; font-weight:700; color:var(--ink); }
+.quick-voice-text{
+  min-height:150px;
+  max-height:430px;
+  margin:28px 0 24px;
+  overflow-y:auto;
+  color:var(--ink);
+  font-size:46px;
+  line-height:1.55;
+  word-break:break-word;
+}
+.quick-voice-text.placeholder{ color:var(--sub); }
+.quick-voice-hint{ color:var(--sub); font-size:30px; line-height:1.4; }
+.quick-voice-edit{
+  display:none;
+  width:100%;
+  margin-top:34px;
+  padding:24px 28px;
+  border:0;
+  border-radius:20px;
+  background:#eef0f4;
+  color:var(--accent);
+  font-size:36px;
+  font-weight:600;
+}
+.quick-voice.error .quick-voice-edit{ display:block; }
