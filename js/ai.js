@@ -221,22 +221,31 @@ async function runQuickVoiceAI(text){
   return runAI({quick:true});
 }
 
-/* 多笔：用当前弹层的日期/币种直接批量记录 */
+/* 多笔：用当前弹层的日期批量记录；明确说出的币种可逐笔覆盖当前币种。 */
 function saveMultiple(arr){
   const iso = entryDate + 'T' + new Date().toTimeString().slice(0,8);
   const saveTpl = window.entryTemplateSaveEnabled && window.entryTemplateSaveEnabled();
-  let n=0, tplN=0;
+  let n=0, tplN=0, activeCur=entryCur, detectedCurrency=false, currencyAdded=false;
   arr.forEach(r=>{
     const amt = Math.round(Number(r.amount)*100)/100;
     if(!(amt>0 && isFinite(amt))) return;
     const type = r.type==='income' ? 'income' : 'expense';
     const cat = pickAiCategory(type, r.category);
     const note = (r.note||'').slice(0,30);
+    const detectedCur = resolveAiCurrency(r.currency);
+    if(detectedCur){
+      activeCur = detectedCur;
+      detectedCurrency = true;
+      if(!currencies.some(c=>c.code===activeCur)){
+        currencies.push(curInfo(activeCur));
+        currencyAdded = true;
+      }
+    }
     records.push({ id:'r'+Date.now()+Math.random().toString(36).slice(2,6),
       type, amount:amt, categoryId:cat.id, note,
-      currency:entryCur, date:iso, createdAt:Date.now() });
+      currency:activeCur, date:iso, createdAt:Date.now() });
     if(saveTpl && window.saveTemplateFromEntry){
-      if(window.saveTemplateFromEntry({ type, amount:amt, categoryId:cat.id, note, currency:entryCur }, true)) tplN++;
+      if(window.saveTemplateFromEntry({ type, amount:amt, categoryId:cat.id, note, currency:activeCur }, true)) tplN++;
     }
     n++;
   });
@@ -244,6 +253,11 @@ function saveMultiple(arr){
     showAlert('没识别出有效金额。\n把金额说清楚试试，例如「打车 35」「午饭 25」。', '没记成');
     return 0;
   }
+  if(detectedCurrency){
+    entryCur = activeCur;
+    localStorage.setItem(LS_LASTCUR, entryCur);
+  }
+  if(currencyAdded) saveCur();
   if(typeof setTemplateSaveOn==='function') setTemplateSaveOn(false);
   save();
   if(window.noteRecordChanged) noteRecordChanged(n);
@@ -255,24 +269,27 @@ function saveMultiple(arr){
 }
 
 /* ---- 调用大模型，抽取一笔账（紧凑分隔格式，比 JSON 更快） ----
-   只让模型出 4 个字段：type<>amount<>category<>note；日期不进模型输出，由代码处理。 */
+   输出 5 个字段：type<>amount<>currency<>category<>note；日期由代码处理。 */
 async function callLLM(text, forcedType=null){
   const typeRule = forcedType
     ? `- 本次记账类型已由用户锁定为「${forcedType==='income'?'收入':'支出'}」。所有行的 type 必须填「${forcedType==='income'?'收':'支'}」，category 也只能从「${forcedType==='income'?'收入':'支出'}」分类中选择，禁止自行改成另一种类型`
     : '- type：支出填「支」，收入填「收」。买东西/消费/付钱都是支出';
   const typeExample = forcedType==='income' ? '收' : '支';
-  const sys = `你是记账助手。把用户的话解析成账目。一句话里可能含多笔，每笔输出一行，用 <> 分隔 4 个字段，顺序固定：
-type<>amount<>category<>note
+  const currencyOptions = [...new Set([...Object.keys(CUR_CATALOG), ...currencies.map(c=>c.code)])]
+    .map(code=>`${code.toUpperCase()}=${curInfo(code).name}`).join('、');
+  const sys = `你是记账助手。把用户的话解析成账目。一句话里可能含多笔，每笔输出一行，用 <> 分隔 5 个字段，顺序固定：
+type<>amount<>currency<>category<>note
 只有一笔就一行。不要输出字段名、引号、JSON、代码块或多余文字。不要输出日期。
 ${typeRule}
 - amount：照抄用户句子里出现的金额数字，必须是纯数字（如 8.5、128），不要带中文单位（不要写成「8块」「8元」「8块钱」）、不要改写、不要计算（下面示例里的数字只是格式示意，绝不要照搬）
+- currency：只有用户明确说出币种时，填写对应的小写 ISO 代码；没说币种必须留空，禁止根据地点、商家或上下文猜测。一句话含多笔时，明确币种可沿用到后续未重复说明的账目。可用币种：${currencyOptions}
 - category：必须严格从下面对应类型的列表里原样照抄一个，禁止自造或改字；**如果遇到不熟悉的实体（如特定网站、App、服务名等），不确定该归哪类时，一律选「其他」，绝不猜测**
 - note：从用户原话里提取具体事由/物品作为备注，**保留用户原话中的完整表述，一字不差**（如用户说「乘坐地铁4」，备注就是「乘坐地铁4」，不要缩成「地铁」；用户说「鲜虾云吞面20」，备注就是「鲜虾云吞面」，不要缩成「云吞面」）。**去除金额数字**和纯语气词即可，不要自行缩减或改写
 可用「支出」分类：${cats.expense.map(c=>c.name).join('、')}。
 可用「收入」分类：${cats.income.map(c=>c.name).join('、')}。
 格式示例（数字仅示意，多笔各占一行）：
-${typeExample}<>金额数字<>分类<>备注
-${typeExample}<>金额数字<>分类<>备注`;
+${typeExample}<>金额数字<>币种代码或留空<>分类<>备注
+${typeExample}<>金额数字<>币种代码或留空<>分类<>备注`;
   const headers = { 'content-type':'application/json', 'authorization':'Bearer '+getKey() };
   const msgs = [ {role:'system', content:sys}, {role:'user', content:text} ];
   let last = [];
@@ -283,19 +300,68 @@ ${typeExample}<>金额数字<>分类<>备注`;
       max_tokens: 512
     });
     const content = data?.choices?.[0]?.message?.content;
-    if(content){ const arr = forceAiType(parseLines(content), forcedType); last = arr;
+    if(content){
+      const fallbackCurrency = detectAiCurrencyFromText(text);
+      const parsed = parseLines(content).map(row=>
+        resolveAiCurrency(row.currency) || !fallbackCurrency ? row : { ...row, currency:fallbackCurrency }
+      );
+      const arr = forceAiType(parsed, forcedType); last = arr;
       const ok = arr.filter(validEntry); if(ok.length) return ok; }
   }
   return last;   // 可能为空或不合规；由 saveMultiple 统一给出友好提示（网络/接口错误已在上面抛出）
 }
 
-/* 解析多行 "支/收<>amount<>category<>note"，每行一笔 */
+/* 解析新 5 字段格式，同时兼容旧的 4 字段模型输出。 */
 function parseLines(t){
   return t.split('\n').map(l=>l.trim()).filter(l=>l.includes('<>')).map(line=>{
     const p = line.split('<>').map(s=>s.trim());
     const income = ['收','收入','i','income'].includes(p[0]);
-    return { type: income?'income':'expense', amount:p[1]||'', category:p[2]||'', note:p[3]||'' };
+    const hasCurrency = p.length>=5;
+    return { type: income?'income':'expense', amount:p[1]||'',
+      currency:hasCurrency ? (p[2]||'') : '',
+      category:hasCurrency ? (p[3]||'') : (p[2]||''),
+      note:hasCurrency ? (p.slice(4).join('<>')||'') : (p.slice(3).join('<>')||'') };
   });
+}
+
+const AI_CURRENCY_TERMS = {
+  cny:['人民币','人民币元','rmb','cny'],
+  usd:['美元','美金','usd'], eur:['欧元','eur'], gbp:['英镑','gbp'],
+  jpy:['日元','日币','jpy'], hkd:['港币','港元','hkd'],
+  twd:['新台币','台币','twd'], krw:['韩元','韩币','krw'],
+  sgd:['新加坡元','新币','sgd'], aud:['澳元','澳币','aud'],
+  cad:['加元','加币','cad'], thb:['泰铢','thb'],
+  myr:['林吉特','马币','myr'], rub:['卢布','rub']
+};
+
+/* 只有原话中恰好出现一种明确币种时才本地兜底，避免模型偶尔漏填。 */
+function detectAiCurrencyFromText(text){
+  const value = String(text || '').toLowerCase();
+  const matches = new Set();
+  Object.entries(AI_CURRENCY_TERMS).forEach(([code, terms])=>{
+    if(terms.some(term=>value.includes(term))) matches.add(code);
+  });
+  currencies.forEach(c=>{
+    const code=String(c.code||'').toLowerCase(), name=String(c.name||'').toLowerCase();
+    if((code && value.includes(code)) || (name && value.includes(name))) matches.add(c.code);
+  });
+  return matches.size===1 ? [...matches][0] : null;
+}
+
+/* 把模型返回的代码/中文名称归一化；空值表示用户没有明确指定币种。 */
+function resolveAiCurrency(raw){
+  const value = String(raw || '').trim().toLowerCase();
+  if(!value) return null;
+  const aliases = {};
+  Object.entries(AI_CURRENCY_TERMS).forEach(([code, terms])=>{
+    terms.forEach(term=>{ aliases[term]=code; });
+  });
+  const code = aliases[value] || value;
+  const configured = currencies.find(c=>
+    c.code.toLowerCase()===code || c.name.toLowerCase()===value
+  );
+  if(configured) return configured.code;
+  return CUR_CATALOG[code] ? code : null;
 }
 
 /* 解析校验：金额必须是正数，分类必须能对上某个已有分类 */
@@ -305,13 +371,17 @@ function validEntry(r){
   return amt>0 && isFinite(amt) && (hasDefault || findCategory(r.type, r.category)!=null);
 }
 
-/* 解析 "支/收<>amount<>category<>note"（按位置取值，缺省留空；不含日期） */
+/* 解析第一笔结果；兼容 5 字段和旧 4 字段格式。 */
 function parseDelimited(t){
   const line = (t.split('\n').find(l=>l.includes('<>')) || t).trim();
   const p = line.split('<>').map(s=>s.trim());
   const income = ['收','收入','i','income'].includes(p[0]);
+  const hasCurrency = p.length>=5;
   return { type: income ? 'income' : 'expense',
-           amount:p[1]||'', category:p[2]||'', note:p[3]||'' };
+           amount:p[1]||'',
+           currency:hasCurrency ? (p[2]||'') : '',
+           category:hasCurrency ? (p[3]||'') : (p[2]||''),
+           note:hasCurrency ? (p.slice(4).join('<>')||'') : (p.slice(3).join('<>')||'') };
 }
 
 /* 让模型为分类名挑一个 emoji（本地关键词没命中时兜底） */
@@ -394,6 +464,16 @@ function applyAIResult(r){
   if(match){ entryCat = match.id; highlightCat(); }
   const amt = Math.round(Number(r.amount)*100)/100;
   amtStr = (amt>0 && isFinite(amt)) ? String(amt) : '0';
+  const detectedCur = resolveAiCurrency(r.currency);
+  if(detectedCur){
+    entryCur = detectedCur;
+    if(!currencies.some(c=>c.code===entryCur)){
+      currencies.push(curInfo(entryCur));
+      saveCur();
+    }
+    localStorage.setItem(LS_LASTCUR, entryCur);
+    updateCurBtn();
+  }
   updateAmt();
   document.getElementById('noteIn').value = (r.note||'').slice(0,30);
   aiInput.value = '';
