@@ -264,12 +264,22 @@
       <div class="dpick-card">
         <div class="dpick-head">
           <div class="nav" id="dpPrev">‹</div>
-          <div id="dpTitle">2026年5月</div>
+          <div class="dpick-title" id="dpTitle" role="button" aria-expanded="false">2026年5月</div>
           <div class="nav" id="dpNext">›</div>
         </div>
-        <div class="dpick-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
-        <div class="dpick-grid" id="dpGrid"></div>
-        <div class="dpick-today" id="dpToday">回到今天</div>
+        <div class="dpick-day-panel" id="dpDayPanel">
+          <div class="dpick-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+          <div class="dpick-grid" id="dpGrid"></div>
+          <div class="dpick-today" id="dpToday">回到今天</div>
+        </div>
+        <div class="dpick-month-panel" id="dpMonthPanel">
+          <div class="dpick-year-head">
+            <div class="nav" id="dpYearPrev">‹</div>
+            <div id="dpYearLabel">2026年</div>
+            <div class="nav" id="dpYearNext">›</div>
+          </div>
+          <div class="dpick-month-grid" id="dpMonthGrid"></div>
+        </div>
       </div>
     </div>
 

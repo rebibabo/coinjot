@@ -296,14 +296,21 @@ function updateDateBtn(){
 }
 /* 自定义中文日历 */
 const dpick=document.getElementById('dpick');
+const dpickCard=document.querySelector('#dpick .dpick-card');
+const dpTitle=document.getElementById('dpTitle');
+const dpMonthPanel=document.getElementById('dpMonthPanel');
 let dpYear, dpMonth, dpValue=today(), dpPick=null;
 function openDatePicker(value, onPick){
   dpValue = value || today();
   dpPick = typeof onPick==='function' ? onPick : null;
   const [y,m]=dpValue.split('-').map(Number);
-  dpYear=y; dpMonth=m-1; renderDateGrid(); dpick.classList.add('show');
+  dpYear=y; dpMonth=m-1;
+  setDateMonthMode(false);
+  renderDateGrid();
+  dpick.classList.add('show');
 }
 function closeDatePicker(){
+  setDateMonthMode(false);
   dpick.classList.remove('show');
   dpPick = null;
 }
@@ -312,7 +319,7 @@ document.getElementById('dateBtn').onclick=()=>{
   openDatePicker(entryDate, d=>{ entryDate=d; updateDateBtn(); });
 };
 function renderDateGrid(){
-  document.getElementById('dpTitle').textContent = `${dpYear}年${dpMonth+1}月`;
+  dpTitle.textContent = `${dpYear}年${dpMonth+1}月`;
   const first = new Date(dpYear, dpMonth, 1).getDay();
   const days  = new Date(dpYear, dpMonth+1, 0).getDate();
   let cells='';
@@ -323,6 +330,33 @@ function renderDateGrid(){
   }
   document.getElementById('dpGrid').innerHTML = cells;
 }
+function renderDateMonthGrid(){
+  document.getElementById('dpYearLabel').textContent = `${dpYear}年`;
+  document.getElementById('dpMonthGrid').innerHTML = Array.from({length:12}, (_,i)=>
+    `<div class="m${i===dpMonth?' on':''}" data-dp-month="${i}">${i+1}月</div>`
+  ).join('');
+}
+function setDateMonthMode(open){
+  dpickCard.classList.toggle('month-mode', open);
+  dpTitle.setAttribute('aria-expanded', String(open));
+  if(open) renderDateMonthGrid();
+}
+function closeDateMonthPanel(){
+  if(!dpickCard.classList.contains('month-mode')) return false;
+  setDateMonthMode(false);
+  return true;
+}
+window.closeDateMonthPanel = closeDateMonthPanel;
+dpTitle.onclick=()=>setDateMonthMode(!dpickCard.classList.contains('month-mode'));
+document.getElementById('dpYearPrev').onclick=()=>{ dpYear--; renderDateMonthGrid(); };
+document.getElementById('dpYearNext').onclick=()=>{ dpYear++; renderDateMonthGrid(); };
+dpMonthPanel.onclick=e=>{
+  const cell=e.target.closest('[data-dp-month]');
+  if(!cell) return;
+  dpMonth=Number(cell.dataset.dpMonth);
+  setDateMonthMode(false);
+  renderDateGrid();
+};
 document.getElementById('dpPrev').onclick=()=>{ if(--dpMonth<0){dpMonth=11;dpYear--;} renderDateGrid(); };
 document.getElementById('dpNext').onclick=()=>{ if(++dpMonth>11){dpMonth=0;dpYear++;} renderDateGrid(); };
 document.getElementById('dpToday').onclick=()=>{

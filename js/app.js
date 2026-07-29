@@ -89,6 +89,7 @@ function handleBack(){
       else if(id==='voiceModal') closeVoiceConfig();
       else if(id==='quickVoice'){ cancelVoiceListening(); hideQuickVoice(); }
       else if(id==='sheet') closeSheet();
+      else if(id==='dpick' && window.closeDateMonthPanel && closeDateMonthPanel()) return true;
       else el.classList.remove('show');
       return true;
     }

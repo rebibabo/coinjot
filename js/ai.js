@@ -180,6 +180,8 @@ aiInput.addEventListener('keydown', e=>{ if(e.key==='Enter') runAI(); });
 
 async function runAI(options={}){
   const quick = options.quick===true;
+  // 普通录入以用户当前选择的收支类型为准；长按 + 的快捷录入才交给 AI 自行判断。
+  const forcedType = quick ? null : (entryType==='income' ? 'income' : 'expense');
   const text = aiInput.value.trim();
   if(!text) return false;
   if(!getKey()){
@@ -191,7 +193,7 @@ async function runAI(options={}){
     aiBtn.innerHTML = '<span class="spin"></span>';
   }
   try{
-    const arr = await callLLM(text);
+    const arr = forceAiType(await callLLM(text, forcedType), forcedType);
     return saveMultiple(arr)>0;                        // 单笔/多笔都直接入账，不再填表复核
   }catch(err){
     showAlert('识别失败，请检查网络或 AI 配置。\n' + (err.message || err), '识别失败');
@@ -202,6 +204,12 @@ async function runAI(options={}){
       aiBtn.textContent = '识别';
     }
   }
+}
+
+/* 界面已明确选择类型时，模型返回值不能覆盖用户选择。 */
+function forceAiType(rows, forcedType){
+  if(!forcedType || !Array.isArray(rows)) return rows;
+  return rows.map(row=>({ ...row, type:forcedType }));
 }
 
 /* 长按底部 +：使用今天和上次币种，不打开弹层，语音结束后直接记账。 */
@@ -248,19 +256,23 @@ function saveMultiple(arr){
 
 /* ---- 调用大模型，抽取一笔账（紧凑分隔格式，比 JSON 更快） ----
    只让模型出 4 个字段：type<>amount<>category<>note；日期不进模型输出，由代码处理。 */
-async function callLLM(text){
+async function callLLM(text, forcedType=null){
+  const typeRule = forcedType
+    ? `- 本次记账类型已由用户锁定为「${forcedType==='income'?'收入':'支出'}」。所有行的 type 必须填「${forcedType==='income'?'收':'支'}」，category 也只能从「${forcedType==='income'?'收入':'支出'}」分类中选择，禁止自行改成另一种类型`
+    : '- type：支出填「支」，收入填「收」。买东西/消费/付钱都是支出';
+  const typeExample = forcedType==='income' ? '收' : '支';
   const sys = `你是记账助手。把用户的话解析成账目。一句话里可能含多笔，每笔输出一行，用 <> 分隔 4 个字段，顺序固定：
 type<>amount<>category<>note
 只有一笔就一行。不要输出字段名、引号、JSON、代码块或多余文字。不要输出日期。
-- type：支出填「支」，收入填「收」。买东西/消费/付钱都是支出
+${typeRule}
 - amount：照抄用户句子里出现的金额数字，必须是纯数字（如 8.5、128），不要带中文单位（不要写成「8块」「8元」「8块钱」）、不要改写、不要计算（下面示例里的数字只是格式示意，绝不要照搬）
 - category：必须严格从下面对应类型的列表里原样照抄一个，禁止自造或改字；**如果遇到不熟悉的实体（如特定网站、App、服务名等），不确定该归哪类时，一律选「其他」，绝不猜测**
 - note：从用户原话里提取具体事由/物品作为备注，**保留用户原话中的完整表述，一字不差**（如用户说「乘坐地铁4」，备注就是「乘坐地铁4」，不要缩成「地铁」；用户说「鲜虾云吞面20」，备注就是「鲜虾云吞面」，不要缩成「云吞面」）。**去除金额数字**和纯语气词即可，不要自行缩减或改写
 可用「支出」分类：${cats.expense.map(c=>c.name).join('、')}。
 可用「收入」分类：${cats.income.map(c=>c.name).join('、')}。
 格式示例（数字仅示意，多笔各占一行）：
-支<>金额数字<>分类<>备注
-支<>金额数字<>分类<>备注`;
+${typeExample}<>金额数字<>分类<>备注
+${typeExample}<>金额数字<>分类<>备注`;
   const headers = { 'content-type':'application/json', 'authorization':'Bearer '+getKey() };
   const msgs = [ {role:'system', content:sys}, {role:'user', content:text} ];
   let last = [];
@@ -271,7 +283,7 @@ type<>amount<>category<>note
       max_tokens: 512
     });
     const content = data?.choices?.[0]?.message?.content;
-    if(content){ const arr = parseLines(content); last = arr;
+    if(content){ const arr = forceAiType(parseLines(content), forcedType); last = arr;
       const ok = arr.filter(validEntry); if(ok.length) return ok; }
   }
   return last;   // 可能为空或不合规；由 saveMultiple 统一给出友好提示（网络/接口错误已在上面抛出）
