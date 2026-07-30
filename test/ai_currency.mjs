@@ -51,11 +51,13 @@ const CURRENCIES = [
   'TWD=新台币','KRW=韩元','SGD=新加坡元','AUD=澳元','CAD=加元',
   'THB=泰铢','MYR=林吉特','RUB=卢布'
 ];
+const CURRENCY_CODES = new Set(CURRENCIES.map(item=>item.slice(0,3).toLowerCase()));
 
 const SYS = `你是记账助手。把用户的话解析成账目。一句话可能含多笔，每笔输出一行，用 <> 分隔 5 个字段：
 type<>amount<>currency<>category<>note
 不要输出字段名、引号、JSON、代码块、日期或多余文字。
 - type：支出填「支」，收入填「收」
+- 第一个字段只能填写「支」或「收」，绝不能放币种代码，也不能省略 type
 - amount：只填原话中的金额数字
 - currency：只有用户明确说出币种时才填小写 ISO 代码；没说必须留空，禁止猜测；前一笔明确币种可沿用到后续未重复说明的账目
 - category：必须从对应分类列表中原样选择
@@ -83,6 +85,14 @@ const CASES = [
 function parseLines(text){
   return text.split('\n').map(line=>line.trim()).filter(line=>line.includes('<>')).map(line=>{
     const p = line.split('<>').map(s=>s.trim());
+    const misplacedCurrency = p.length===4 && CURRENCY_CODES.has(p[0].toLowerCase()) ? p[0].toLowerCase() : null;
+    if(misplacedCurrency){
+      return {
+        type:INCOME.includes(p[2]) ? 'i' : 'e',
+        amount:Number(p[1]),
+        currency:misplacedCurrency,
+      };
+    }
     return {
       type:['收','收入','i','income'].includes(p[0]) ? 'i' : 'e',
       amount:Number(p[1]),

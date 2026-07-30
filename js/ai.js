@@ -281,6 +281,7 @@ async function callLLM(text, forcedType=null){
 type<>amount<>currency<>category<>note
 只有一笔就一行。不要输出字段名、引号、JSON、代码块或多余文字。不要输出日期。
 ${typeRule}
+- 第一个字段只能填写「支」或「收」，绝不能把币种代码放在第一个字段，也不能省略 type
 - amount：照抄用户句子里出现的金额数字，必须是纯数字（如 8.5、128），不要带中文单位（不要写成「8块」「8元」「8块钱」）、不要改写、不要计算（下面示例里的数字只是格式示意，绝不要照搬）
 - currency：只有用户明确说出币种时，填写对应的小写 ISO 代码；没说币种必须留空，禁止根据地点、商家或上下文猜测。一句话含多笔时，明确币种可沿用到后续未重复说明的账目。可用币种：${currencyOptions}
 - category：必须严格从下面对应类型的列表里原样照抄一个，禁止自造或改字；**如果遇到不熟悉的实体（如特定网站、App、服务名等），不确定该归哪类时，一律选「其他」，绝不猜测**
@@ -301,10 +302,7 @@ ${typeExample}<>金额数字<>币种代码或留空<>分类<>备注`;
     });
     const content = data?.choices?.[0]?.message?.content;
     if(content){
-      const fallbackCurrency = detectAiCurrencyFromText(text);
-      const parsed = parseLines(content).map(row=>
-        resolveAiCurrency(row.currency) || !fallbackCurrency ? row : { ...row, currency:fallbackCurrency }
-      );
+      const parsed = sanitizeAiCurrencies(parseLines(content), text);
       const arr = forceAiType(parsed, forcedType); last = arr;
       const ok = arr.filter(validEntry); if(ok.length) return ok; }
   }
@@ -315,6 +313,12 @@ ${typeExample}<>金额数字<>币种代码或留空<>分类<>备注`;
 function parseLines(t){
   return t.split('\n').map(l=>l.trim()).filter(l=>l.includes('<>')).map(line=>{
     const p = line.split('<>').map(s=>s.trim());
+    const misplacedCurrency = p.length===4 ? resolveAiCurrency(p[0]) : null;
+    if(misplacedCurrency){
+      const income = (cats.income || []).some(c=>c.name===p[2]);
+      return { type:income?'income':'expense', amount:p[1]||'',
+        currency:misplacedCurrency, category:p[2]||'', note:p.slice(3).join('<>')||'' };
+    }
     const income = ['收','收入','i','income'].includes(p[0]);
     const hasCurrency = p.length>=5;
     return { type: income?'income':'expense', amount:p[1]||'',
@@ -334,8 +338,8 @@ const AI_CURRENCY_TERMS = {
   myr:['林吉特','马币','myr'], rub:['卢布','rub']
 };
 
-/* 只有原话中恰好出现一种明确币种时才本地兜底，避免模型偶尔漏填。 */
-function detectAiCurrencyFromText(text){
+/* 找出原话明确出现过的币种；模型无权使用这个集合以外的币种。 */
+function findAiCurrenciesInText(text){
   const value = String(text || '').toLowerCase();
   const matches = new Set();
   Object.entries(AI_CURRENCY_TERMS).forEach(([code, terms])=>{
@@ -343,8 +347,30 @@ function detectAiCurrencyFromText(text){
   });
   currencies.forEach(c=>{
     const code=String(c.code||'').toLowerCase(), name=String(c.name||'').toLowerCase();
-    if((code && value.includes(code)) || (name && value.includes(name))) matches.add(c.code);
+    if((code && value.includes(code)) || (name && value.includes(name))) matches.add(code);
   });
+  return matches;
+}
+
+/* 代码层硬约束：没说币种就沿用当前选择，绝不接受模型自行猜测。 */
+function sanitizeAiCurrencies(rows, text){
+  const explicit = findAiCurrenciesInText(text);
+  if(explicit.size===0) return rows.map(row=>({ ...row, currency:'' }));
+  if(explicit.size===1){
+    const only = [...explicit][0];
+    return rows.map(row=>({ ...row, currency:only }));
+  }
+  let active = null;
+  return rows.map(row=>{
+    const resolved = resolveAiCurrency(row.currency);
+    if(resolved && explicit.has(resolved)) active = resolved;
+    return { ...row, currency:active || '' };
+  });
+}
+
+/* 兼容其它调用：只有原话中恰好出现一种明确币种时才返回。 */
+function detectAiCurrencyFromText(text){
+  const matches = findAiCurrenciesInText(text);
   return matches.size===1 ? [...matches][0] : null;
 }
 
@@ -375,6 +401,12 @@ function validEntry(r){
 function parseDelimited(t){
   const line = (t.split('\n').find(l=>l.includes('<>')) || t).trim();
   const p = line.split('<>').map(s=>s.trim());
+  const misplacedCurrency = p.length===4 ? resolveAiCurrency(p[0]) : null;
+  if(misplacedCurrency){
+    const income = (cats.income || []).some(c=>c.name===p[2]);
+    return { type:income?'income':'expense', amount:p[1]||'',
+      currency:misplacedCurrency, category:p[2]||'', note:p.slice(3).join('<>')||'' };
+  }
   const income = ['收','收入','i','income'].includes(p[0]);
   const hasCurrency = p.length>=5;
   return { type: income ? 'income' : 'expense',
